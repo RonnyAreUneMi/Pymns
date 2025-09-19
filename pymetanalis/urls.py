@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from usuarios.views import home_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home_view, name='home'), # Ruta para el home
-    path('', include('usuarios.urls')),
+    path('', include('core.urls')),  # URLs del core, incluyendo el home
+    path('usuarios/', include('usuarios.urls')),  # URLs de usuarios con prefijo
 ]
