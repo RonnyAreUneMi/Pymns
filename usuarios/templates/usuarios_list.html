@@ -480,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
                     // Construir URL dinámicamente (asumiendo que tienes la URL base)
-                    const deleteUrl = `/usuarios/delete/${userId}/`;
+                    const deleteUrl = `/delete/${userId}/`;
                     
                     fetch(deleteUrl, {
                         method: 'POST',
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
                     // Construir URL dinámicamente
-                    const changeRoleUrl = `/usuarios/change-role/${userId}/`;
+                    const changeRoleUrl = `/change-role/${userId}/`;
                     
                     fetch(changeRoleUrl, {
                         method: 'POST',

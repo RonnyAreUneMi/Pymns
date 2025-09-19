@@ -27,7 +27,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Usuarios</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white">1,247</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_usuarios|default:0 }}</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +46,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Artículos Publicados</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white">89</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_articulos|default:0 }}</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,11 +65,11 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Análisis Activos</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white">34</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_analisis|default:0 }}</p>
                         </div>
                         <div class="w-12 h-12 bg-primary bg-opacity-20 dark:bg-primary-neon dark:bg-opacity-20 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-primary dark:text-primary-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a22 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </div>
                     </div>
@@ -84,7 +84,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Revisiones Pendientes</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white">12</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ revisiones_pendientes|default:0 }}</p>
                         </div>
                         <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@
                             <!-- Centro del gráfico -->
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <div class="text-center">
-                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">89</p>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_articulos|default:0 }}</p>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
                                 </div>
                             </div>
