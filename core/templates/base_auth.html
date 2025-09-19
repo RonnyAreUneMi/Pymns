@@ -30,14 +30,13 @@
             }
         }
 
-        // Dark mode functionality - MOVIDO ANTES DEL DOM
+        // Dark mode functionality
         function initDarkMode() {
             console.log('Inicializando modo oscuro...');
             const isDark = localStorage.getItem('darkMode') === 'true' || 
                           (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
             console.log('¿Modo oscuro detectado?', isDark);
-            console.log('localStorage darkMode:', localStorage.getItem('darkMode'));
             
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -63,15 +62,12 @@
                 console.log('Cambiando a modo oscuro');
             }
             
-            // Verificar que se aplicó el cambio
             const newState = document.documentElement.classList.contains('dark');
             console.log('Nuevo estado después del toggle:', newState);
         }
 
-        // Inicializar inmediatamente
-        document.addEventListener('DOMContentLoaded', function() {
-            initDarkMode();
-        });
+        // Inicializar dark mode inmediatamente
+        initDarkMode();
     </script>
     {% block extra_head %}{% endblock %}
 </head>
@@ -114,19 +110,18 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Scripts adicionales -->
+    <!-- Scripts base (dark mode y efectos generales) -->
     <script>
-        // Event listeners después de que cargue el DOM
+        // Inicialización base después de cargar DOM
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado');
+            console.log('DOM cargado - Base Auth');
             
+            // Configurar dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
-            console.log('Botón encontrado:', darkModeToggle);
-            
             if (darkModeToggle) {
                 // Método adicional por si onclick no funciona
                 darkModeToggle.addEventListener('click', function(e) {
-                    console.log('Click detectado en el botón');
+                    console.log('Click detectado en el botón dark mode');
                     e.preventDefault();
                     toggleDarkMode();
                 });
@@ -139,8 +134,9 @@
                 document.body.style.opacity = '1';
             }, 100);
         });
-
-        // {% block extra_js %}{% endblock %}
     </script>
+    
+    <!-- Scripts específicos de la página -->
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

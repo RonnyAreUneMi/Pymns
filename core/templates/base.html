@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Mi Proyecto de Metaanálisis{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -98,6 +99,7 @@
             font-weight: 500;
         }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-bg-main dark:bg-bg-main-dark text-text-main dark:text-text-main-dark min-h-screen">
@@ -133,7 +135,7 @@
                 <!-- Menú de navegación dinámico -->
                 <nav class="space-y-1">
                     {% if user.is_authenticated %}
-                        {% if user.profile.role.name == 'administrador' %}
+                        {% if user.profile and user.profile.role and user.profile.role.name == 'administrador' %}
                             <!-- Menú para Administrador -->
                             <div class="menu-section">
                                 <p class="menu-section-title">Panel Principal</p>
@@ -153,7 +155,7 @@
                                     </svg>
                                     <span>Gestión</span>
                                 </a>
-                                <a href="{% url 'usuarios_list' %}" class="flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200">
+                                <a href="{% url 'usuarios_list' %}" class="flex items-center px-4 py-3 text-white {% if request.resolver_match.url_name == 'usuarios_list' %}bg-white bg-opacity-20{% else %}hover:bg-white hover:bg-opacity-10{% endif %} rounded-lg transition-all duration-200">
                                     <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                                     </svg>
