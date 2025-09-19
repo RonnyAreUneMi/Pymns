@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),  # URLs del core, incluyendo el home
     path('usuarios/', include('usuarios.urls')),  # URLs de usuarios con prefijo
+    path('security/', include('security.urls'))
 ]
