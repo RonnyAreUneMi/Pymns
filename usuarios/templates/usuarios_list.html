@@ -292,8 +292,9 @@
                             <select class="role-select bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:outline-none p-2.5 transition-all duration-200" 
                                     data-user-id="{{ usuario.id }}" 
                                     data-current-role="{{ usuario.profile.role.name|default:'sin-rol' }}">
+                                <option value="" {% if not usuario.profile.role %}selected{% endif %}>Sin rol</option>
                                 {% for role in roles %}
-                                    <option value="{{ role.id }}" {% if usuario.profile.role == role %}selected{% endif %}>
+                                    <option value="{{ role.id }}" {% if usuario.profile.role.id == role.id %}selected{% endif %}>
                                         {{ role.name|capfirst }}
                                     </option>
                                 {% endfor %}
@@ -479,8 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const loadingOverlay = document.getElementById('loading-overlay');
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
-                    // Construir URL dinámicamente (asumiendo que tienes la URL base)
-                    const deleteUrl = `/delete/${userId}/`;
+                    // Usar URL con namespace
+                    const deleteUrl = "{% url 'delete_user' 0 %}".replace('0', userId);
                     
                     fetch(deleteUrl, {
                         method: 'POST',
@@ -551,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.getAttribute('data-user-id');
             const newRoleId = this.value;
             const currentRole = this.getAttribute('data-current-role');
-            const newRoleName = this.options[this.selectedIndex].text;
+            const newRoleName = newRoleId ? this.options[this.selectedIndex].text : 'Sin rol';
             
             Swal.fire({
                 title: '¿Cambiar rol?',
@@ -569,8 +570,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const loadingOverlay = document.getElementById('loading-overlay');
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
-                    // Construir URL dinámicamente
-                    const changeRoleUrl = `/change-role/${userId}/`;
+                    // Usar URL con namespace
+                    const changeRoleUrl = "{% url 'change_user_role' 0 %}".replace('0', userId);
                     
                     fetch(changeRoleUrl, {
                         method: 'POST',
@@ -598,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             this.setAttribute('data-current-role', newRoleName.toLowerCase());
                             const userRow = this.closest('tr');
                             if (userRow) {
-                                userRow.setAttribute('data-role', newRoleName.toLowerCase());
+                                userRow.setAttribute('data-role', newRoleName.toLowerCase().replace(' ', '-'));
                             }
                         } else {
                             Swal.fire({
@@ -608,13 +609,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
                                 color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'
                             });
-                            // Revertir selección - buscar por el rol actual
-                            const currentRoleOption = Array.from(this.options).find(option => 
-                                option.text.toLowerCase() === currentRole
-                            );
-                            if (currentRoleOption) {
-                                this.value = currentRoleOption.value;
-                            }
+                            // Revertir selección
+                            revertRoleSelection(this, currentRole);
                         }
                     })
                     .catch(error => {
@@ -628,25 +624,29 @@ document.addEventListener('DOMContentLoaded', function() {
                             color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'
                         });
                         // Revertir selección
-                        const currentRoleOption = Array.from(this.options).find(option => 
-                            option.text.toLowerCase() === currentRole
-                        );
-                        if (currentRoleOption) {
-                            this.value = currentRoleOption.value;
-                        }
+                        revertRoleSelection(this, currentRole);
                     });
                 } else {
                     // Revertir selección si se cancela
-                    const currentRoleOption = Array.from(this.options).find(option => 
-                        option.text.toLowerCase() === currentRole
-                    );
-                    if (currentRoleOption) {
-                        this.value = currentRoleOption.value;
-                    }
+                    revertRoleSelection(this, currentRole);
                 }
             });
         });
     });
+    
+    // Función para revertir selección de rol
+    function revertRoleSelection(selectElement, currentRole) {
+        if (currentRole === 'sin-rol') {
+            selectElement.value = '';
+        } else {
+            const currentRoleOption = Array.from(selectElement.options).find(option => 
+                option.text.toLowerCase() === currentRole.toLowerCase()
+            );
+            if (currentRoleOption) {
+                selectElement.value = currentRoleOption.value;
+            }
+        }
+    }
     
     // Función para obtener CSRF token
     function getCookie(name) {
