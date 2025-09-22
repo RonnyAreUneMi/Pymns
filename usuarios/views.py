@@ -14,9 +14,6 @@ from django.contrib.auth.models import User
 import json
 from django.db import transaction
 
-def home_view(request):
-    return render(request, 'home.html')
-
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -44,7 +41,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'¡Bienvenido {user.get_full_name()}!')
-                return redirect('home')
+                return redirect('core:home')  # Actualizado para usar el namespace
             else:
                 messages.error(request, 'Credenciales incorrectas.')
         else:
@@ -56,7 +53,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.info(request, 'Has cerrado sesión correctamente.')
-    return redirect('home')
+    return redirect('core:home')  # Actualizado para usar el namespace
 
 @login_required 
 def usuarios_list_view(request):
@@ -65,7 +62,7 @@ def usuarios_list_view(request):
             request.user.profile.role and 
             request.user.profile.role.name == 'administrador'):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('home')
+        return redirect('core:home')  # Actualizado para usar el namespace
     
     # Parámetros de búsqueda y filtros
     search_query = request.GET.get('search', '').strip()
@@ -392,7 +389,7 @@ def seguridad_accesos_view(request):
             request.user.profile.role and 
             request.user.profile.role.name == 'administrador'):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('home')
+        return redirect('core:home')  # Actualizado para usar el namespace
     
     context = {
         'title': 'Seguridad y Accesos',

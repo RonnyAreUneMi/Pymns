@@ -112,8 +112,8 @@
                 <p class="text-white text-opacity-90 text-sm">Administra los usuarios del sistema de manera eficiente</p>
             </div>
             <div class="bg-white bg-opacity-20 rounded-xl p-4 backdrop-blur-sm">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
                 </svg>
             </div>
         </div>
@@ -292,8 +292,9 @@
                             <select class="role-select bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:outline-none p-2.5 transition-all duration-200" 
                                     data-user-id="{{ usuario.id }}" 
                                     data-current-role="{{ usuario.profile.role.name|default:'sin-rol' }}">
+                                <option value="" {% if not usuario.profile.role %}selected{% endif %}>Sin rol</option>
                                 {% for role in roles %}
-                                    <option value="{{ role.id }}" {% if usuario.profile.role == role %}selected{% endif %}>
+                                    <option value="{{ role.id }}" {% if usuario.profile.role.id == role.id %}selected{% endif %}>
                                         {{ role.name|capfirst }}
                                     </option>
                                 {% endfor %}
@@ -479,8 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const loadingOverlay = document.getElementById('loading-overlay');
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
-                    // Construir URL dinámicamente (asumiendo que tienes la URL base)
-                    const deleteUrl = `/usuarios/delete/${userId}/`;
+                    // Usar URL con namespace
+                    const deleteUrl = "{% url 'delete_user' 0 %}".replace('0', userId);
                     
                     fetch(deleteUrl, {
                         method: 'POST',
@@ -551,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.getAttribute('data-user-id');
             const newRoleId = this.value;
             const currentRole = this.getAttribute('data-current-role');
-            const newRoleName = this.options[this.selectedIndex].text;
+            const newRoleName = newRoleId ? this.options[this.selectedIndex].text : 'Sin rol';
             
             Swal.fire({
                 title: '¿Cambiar rol?',
@@ -569,8 +570,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const loadingOverlay = document.getElementById('loading-overlay');
                     if (loadingOverlay) loadingOverlay.style.display = 'flex';
                     
-                    // Construir URL dinámicamente
-                    const changeRoleUrl = `/usuarios/change-role/${userId}/`;
+                    // Usar URL con namespace
+                    const changeRoleUrl = "{% url 'change_user_role' 0 %}".replace('0', userId);
                     
                     fetch(changeRoleUrl, {
                         method: 'POST',
@@ -598,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             this.setAttribute('data-current-role', newRoleName.toLowerCase());
                             const userRow = this.closest('tr');
                             if (userRow) {
-                                userRow.setAttribute('data-role', newRoleName.toLowerCase());
+                                userRow.setAttribute('data-role', newRoleName.toLowerCase().replace(' ', '-'));
                             }
                         } else {
                             Swal.fire({
@@ -608,13 +609,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
                                 color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'
                             });
-                            // Revertir selección - buscar por el rol actual
-                            const currentRoleOption = Array.from(this.options).find(option => 
-                                option.text.toLowerCase() === currentRole
-                            );
-                            if (currentRoleOption) {
-                                this.value = currentRoleOption.value;
-                            }
+                            // Revertir selección
+                            revertRoleSelection(this, currentRole);
                         }
                     })
                     .catch(error => {
@@ -628,25 +624,29 @@ document.addEventListener('DOMContentLoaded', function() {
                             color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'
                         });
                         // Revertir selección
-                        const currentRoleOption = Array.from(this.options).find(option => 
-                            option.text.toLowerCase() === currentRole
-                        );
-                        if (currentRoleOption) {
-                            this.value = currentRoleOption.value;
-                        }
+                        revertRoleSelection(this, currentRole);
                     });
                 } else {
                     // Revertir selección si se cancela
-                    const currentRoleOption = Array.from(this.options).find(option => 
-                        option.text.toLowerCase() === currentRole
-                    );
-                    if (currentRoleOption) {
-                        this.value = currentRoleOption.value;
-                    }
+                    revertRoleSelection(this, currentRole);
                 }
             });
         });
     });
+    
+    // Función para revertir selección de rol
+    function revertRoleSelection(selectElement, currentRole) {
+        if (currentRole === 'sin-rol') {
+            selectElement.value = '';
+        } else {
+            const currentRoleOption = Array.from(selectElement.options).find(option => 
+                option.text.toLowerCase() === currentRole.toLowerCase()
+            );
+            if (currentRoleOption) {
+                selectElement.value = currentRoleOption.value;
+            }
+        }
+    }
     
     // Función para obtener CSRF token
     function getCookie(name) {

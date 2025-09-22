@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <!-- Header con título y navegación -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 pt-6">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
+            <p class="mt-2 text-base text-gray-600 dark:text-gray-400">
+                Modifica los permisos asignados al rol "{{ role.name }}"
+            </p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'security:dashboard' %}" 
+               class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white border border-red-600 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Información del rol (solo lectura) -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Rol</h3>
+            
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ role.name|title }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Rol del sistema - No editable
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permisos -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Permisos del Sistema</h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Selecciona los permisos que tendrá este rol
+                    </p>
+                </div>
+                <div class="flex space-x-2">
+                    <button type="button" id="selectAll" class="px-3 py-2 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
+                        Seleccionar Todo
+                    </button>
+                    <button type="button" id="deselectAll" class="px-3 py-2 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                        Deseleccionar Todo
+                    </button>
+                </div>
+            </div>
+
+            {% if permissions_by_content_type %}
+                <div class="space-y-6">
+                    {% for content_type, permissions in permissions_by_content_type.items %}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <!-- Header del grupo con colores específicos -->
+                        {% with app_name=content_type.app_label|lower %}
+                        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 
+                            {% if 'auth' in app_name or 'usuario' in app_name %}
+                                bg-gradient-to-r from-blue-500 to-blue-600 text-white
+                            {% elif 'admin' in app_name or 'security' in app_name %}
+                                bg-gradient-to-r from-red-500 to-red-600 text-white
+                            {% elif 'content' in app_name or 'core' in app_name %}
+                                bg-gradient-to-r from-green-500 to-green-600 text-white
+                            {% elif 'session' in app_name %}
+                                bg-gradient-to-r from-purple-500 to-purple-600 text-white
+                            {% elif 'log' in app_name %}
+                                bg-gradient-to-r from-orange-500 to-orange-600 text-white
+                            {% else %}
+                                bg-gradient-to-r from-gray-500 to-gray-600 text-white
+                            {% endif %}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Icono específico por tipo -->
+                                    {% if 'auth' in app_name or 'usuario' in app_name %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                        </svg>
+                                    {% elif 'admin' in app_name or 'security' in app_name %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+                                        </svg>
+                                    {% elif 'content' in app_name or 'core' in app_name %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                        </svg>
+                                    {% elif 'session' in app_name %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12,3C16.97,3 21,7.03 21,12C21,17 16.97,21 12,21C7.03,21 3,17 3,12C3,7.03 7.03,3 12,3M13,13H18L16.5,15.5L15,14L13,16V13M6.5,9.5L7.5,10.5L11,7L13,9V6H10L12,4L6.5,9.5Z"/>
+                                        </svg>
+                                    {% elif 'log' in app_name %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M3,3H21V5H3V3M4,6H20V10H4V6M4,11H20V15H4V11M4,16H20V20H4V16Z"/>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12,2L13.09,8.26L22,9L17.22,15.18L19.18,22L12,18.27L4.82,22L6.78,15.18L2,9L10.91,8.26L12,2Z"/>
+                                        </svg>
+                                    {% endif %}
+                                    <h4 class="text-lg font-semibold">
+                                        {{ content_type.app_label|title }} - {{ content_type.model|title }}
+                                    </h4>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <button type="button" 
+                                            class="select-group-btn px-3 py-1 text-sm bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-300"
+                                            data-group="{{ content_type.id }}">
+                                        Seleccionar Grupo
+                                    </button>
+                                    <span class="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
+                                        {{ permissions|length }} permiso{{ permissions|length|pluralize }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        
+                        <!-- Permisos del grupo -->
+                        <div class="p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {% for permission in permissions %}
+                                <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                                    <input type="checkbox" 
+                                           name="permissions" 
+                                           value="{{ permission.id }}"
+                                           class="permission-checkbox group-{{ content_type.id }} h-4 w-4 text-primary border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-2"
+                                           {% if permission.id in current_permissions %}checked{% endif %}>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ permission.name }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {{ permission.codename }}
+                                        </div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay permisos disponibles</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        No se encontraron permisos en el sistema.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Información adicional -->
+        <div class="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg p-4">
+            <div class="flex items-start space-x-3">
+                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h4 class="text-sm font-medium text-blue-900 dark:text-blue-300">Información Importante</h4>
+                    <p class="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                        Los cambios en los permisos del rol se aplicarán automáticamente a todos los usuarios que tengan asignado este rol.
+                        Esto puede afectar el acceso de {{ role.profile_set.count }} usuario{{ role.profile_set.count|pluralize }} actualmente.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex items-center justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'security:dashboard' %}" 
+                   class="inline-flex items-center px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white border border-gray-600 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+                    <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Guardar Permisos
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css">
+
+<!-- JavaScript para funcionalidades del formulario -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionar/Deseleccionar todo
+    const selectAllBtn = document.getElementById('selectAll');
+    const deselectAllBtn = document.getElementById('deselectAll');
+    const allCheckboxes = document.querySelectorAll('.permission-checkbox');
+
+    selectAllBtn.addEventListener('click', function() {
+        allCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateCounters();
+    });
+
+    deselectAllBtn.addEventListener('click', function() {
+        allCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateCounters();
+    });
+
+    // Seleccionar/Deseleccionar por grupo
+    const selectGroupBtns = document.querySelectorAll('.select-group-btn');
+    
+    selectGroupBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const groupId = this.dataset.group;
+            const groupCheckboxes = document.querySelectorAll(`.group-${groupId}`);
+            
+            // Verificar si todos están seleccionados
+            const allChecked = Array.from(groupCheckboxes).every(cb => cb.checked);
+            
+            // Si todos están seleccionados, deseleccionar; si no, seleccionar todos
+            groupCheckboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+            });
+            
+            updateCounters();
+        });
+    });
+
+    // Actualizar contadores dinámicamente
+    function updateCounters() {
+        selectGroupBtns.forEach(btn => {
+            const groupId = btn.dataset.group;
+            const groupCheckboxes = document.querySelectorAll(`.group-${groupId}`);
+            const checkedCount = document.querySelectorAll(`.group-${groupId}:checked`).length;
+            const totalCount = groupCheckboxes.length;
+            
+            // Actualizar texto del botón basado en el estado
+            if (checkedCount === totalCount && totalCount > 0) {
+                btn.textContent = 'Deseleccionar Grupo';
+                btn.className = 'select-group-btn px-3 py-1 text-sm bg-white bg-opacity-30 hover:bg-opacity-40 text-white rounded-lg transition-all duration-300';
+            } else {
+                btn.textContent = 'Seleccionar Grupo';
+                btn.className = 'select-group-btn px-3 py-1 text-sm bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-300';
+            }
+        });
+    }
+
+    // Escuchar cambios en checkboxes individuales
+    allCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCounters);
+    });
+
+    // Inicializar contadores
+    updateCounters();
+
+    // Confirmación con SweetAlert2 antes de enviar el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevenir el envío automático
+        
+        const checkedPermissions = document.querySelectorAll('.permission-checkbox:checked').length;
+        
+        if (checkedPermissions === 0) {
+            // Mostrar alerta de confirmación cuando no hay permisos seleccionados
+            Swal.fire({
+                title: '⚠️ ¡Atención!',
+                html: `
+                    <div class="text-left">
+                        <p class="text-gray-700 mb-3">Estás a punto de guardar este rol <strong>sin permisos</strong>.</p>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        <strong>Consecuencias:</strong> Los usuarios con este rol no podrán realizar ninguna acción en el sistema.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-save"></i> Sí, guardar sin permisos',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                customClass: {
+                    popup: 'swal2-popup-custom',
+                    title: 'text-xl font-bold text-gray-900',
+                    content: 'text-left',
+                    confirmButton: 'px-6 py-2.5 text-sm font-medium',
+                    cancelButton: 'px-6 py-2.5 text-sm font-medium'
+                },
+                buttonsStyling: true,
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar mensaje de éxito y redireccionar
+                    Swal.fire({
+                        title: '✅ ¡Guardado!',
+                        text: 'Los permisos del rol han sido actualizados correctamente.',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        timerProgressBar: true,
+                        customClass: {
+                            popup: 'swal2-popup-custom',
+                            title: 'text-xl font-bold text-green-700'
+                        }
+                    }).then(() => {
+                        // Redireccionar a la tabla/dashboard
+                        window.location.href = "{% url 'security:dashboard' %}";
+                    });
+                }
+            });
+        } else {
+            // Mostrar confirmación normal cuando hay permisos seleccionados
+            Swal.fire({
+                title: '💾 Confirmar Cambios',
+                html: `
+                    <div class="text-left">
+                        <p class="text-gray-700 mb-3">¿Estás seguro de que deseas guardar los cambios en los permisos del rol?</p>
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        <strong>Permisos seleccionados:</strong> ${checkedPermissions}<br>
+                                        <strong>Usuarios afectados:</strong> {{ role.profile_set.count }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-save"></i> Sí, guardar cambios',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                customClass: {
+                    popup: 'swal2-popup-custom',
+                    title: 'text-xl font-bold text-gray-900',
+                    content: 'text-left',
+                    confirmButton: 'px-6 py-2.5 text-sm font-medium',
+                    cancelButton: 'px-6 py-2.5 text-sm font-medium'
+                },
+                buttonsStyling: true,
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading mientras se procesa
+                    Swal.fire({
+                        title: 'Guardando...',
+                        text: 'Por favor espere mientras se actualizan los permisos.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Enviar el formulario
+                    form.submit();
+                }
+            });
+        }
+    });
+});
+</script>
+
+<style>
+/* Estilos personalizados para SweetAlert2 */
+.swal2-popup-custom {
+    border-radius: 0.5rem !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.swal2-popup-custom .swal2-title {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+}
+
+.swal2-popup-custom .swal2-content {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+}
+
+/* Estilos para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .swal2-popup {
+        background-color: #1f2937 !important;
+        color: #f9fafb !important;
+    }
+    
+    .swal2-title {
+        color: #f9fafb !important;
+    }
+    
+    .swal2-content {
+        color: #d1d5db !important;
+    }
+}
+</style>
+{% endblock %}
