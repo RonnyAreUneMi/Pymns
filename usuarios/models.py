@@ -76,3 +76,80 @@ def save_user_profile(sender, instance, **kwargs):
         if instance.profile.last_name.title() != instance.last_name:
             instance.profile.last_name = instance.last_name.upper()
             instance.profile.save()
+
+# Agregar estos modelos a tu archivo models.py existente
+
+class Category(models.Model):
+    """Modelo para categorías de proyectos"""
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default='#22c55e', help_text='Color en formato hexadecimal')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activa = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Categoría"
+        verbose_name_plural = "Categorías"
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return self.nombre
+
+
+class Project(models.Model):
+    """Modelo para proyectos"""
+    
+    ESTADO_CHOICES = [
+        ('activo', 'Activo'),
+        ('completado', 'Completado'),
+        ('pausado', 'Pausado'),
+        ('cancelado', 'Cancelado'),
+    ]
+    
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    categoria = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activo')
+    
+    # Fechas
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin = models.DateField(null=True, blank=True)
+    
+    # Información adicional
+    tecnologias = models.TextField(blank=True, help_text='Tecnologías separadas por comas')
+    url_publica = models.URLField(blank=True, help_text='URL pública del proyecto')
+    url_repositorio = models.URLField(blank=True, help_text='URL del repositorio de código')
+    
+    # Control de visibilidad
+    is_public = models.BooleanField(default=False, help_text='¿El proyecto es visible públicamente?')
+    is_featured = models.BooleanField(default=False, help_text='¿Es un proyecto destacado?')
+    
+    # Relaciones
+    creado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proyectos_creados')
+    colaboradores = models.ManyToManyField(User, blank=True, related_name='proyectos_colaborando')
+    
+    class Meta:
+        verbose_name = "Proyecto"
+        verbose_name_plural = "Proyectos"
+        ordering = ['-fecha_creacion']
+        indexes = [
+            models.Index(fields=['estado', 'is_public']),
+            models.Index(fields=['fecha_creacion']),
+            models.Index(fields=['categoria']),
+        ]
+    
+    def __str__(self):
+        return self.nombre
+    
+    def get_tecnologias_list(self):
+        """Retorna las tecnologías como una lista"""
+        if self.tecnologias:
+            return [tech.strip() for tech in self.tecnologias.split(',') if tech.strip()]
+        return []
+    
+    def get_colaboradores_names(self):
+        """Retorna los nombres de los colaboradores"""
+        return [colab.get_full_name() or colab.username for colab in self.colaboradores.all()]
+    

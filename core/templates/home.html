@@ -5,7 +5,7 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-    {% if user.profile.role.name == 'administrador' %}
+    {% if user.profile and user.profile.role and user.profile.role.name == 'administrador' %}
         <!-- Dashboard para Admin -->
         <div class="space-y-6">
             <!-- Header del dashboard -->
@@ -30,9 +30,9 @@
                             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_usuarios|default:0 }}</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                            </svg>
+                            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
+                        </svg>
                         </div>
                     </div>
                     <div class="mt-4 flex items-center text-sm">
@@ -195,33 +195,50 @@
             </div>
         </div>
 
+    {% elif user.profile.role.name == 'invitado' %}
+        <script>
+            window.location.href = "{% url 'proyectos' %}";
+        </script>
     {% else %}
-        <!-- Vista para invitados/usuarios normales -->
         <div class="max-w-6xl mx-auto space-y-12">
             <!-- Hero Section -->
             <div class="text-center py-12">
                 <h1 class="text-5xl font-light text-gray-900 dark:text-white mb-6 tracking-tight">
-                    Bienvenido a <span class="font-bold text-primary dark:text-primary-neon">PM</span>
+                    Bienvenido! <span class="font-bold text-primary dark:text-primary-neon"></span>
                 </h1>
                 <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
                     La plataforma líder en metaanálisis para investigación científica. 
                     Analiza, compara y extrae conclusiones de múltiples estudios con herramientas profesionales.
                 </p>
             </div>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="max-w-6xl mx-auto space-y-12">
+        <!-- Hero Section -->
+        <div class="text-center py-12">
+            <h1 class="text-5xl font-light text-gray-900 dark:text-white mb-6 tracking-tight">
+                Bienvenido a <span class="font-bold text-primary dark:text-primary-neon">PM</span>
+            </h1>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                La plataforma líder en metaanálisis para investigación científica. 
+                Analiza, compara y extrae conclusiones de múltiples estudios con herramientas profesionales.
+            </p>
+        </div>
 
-            <!-- Features Section -->
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <!-- Contenido -->
-                <div class="space-y-8">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                            Análisis Estadístico Avanzado
-                        </h2>
-                        <p class="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
-                            Utiliza técnicas estadísticas de vanguardia para combinar resultados de múltiples estudios, 
-                            aumentando la potencia estadística y la precisión de tus conclusiones.
-                        </p>
-                    </div>
+        <!-- Features Section -->
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Contenido -->
+            <div class="space-y-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                        Análisis Estadístico Avanzado
+                    </h2>
+                    <p class="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+                        Utiliza técnicas estadísticas de vanguardia para combinar resultados de múltiples estudios, 
+                        aumentando la potencia estadística y la precisión de tus conclusiones.
+                    </p>
+                </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
@@ -342,7 +359,7 @@
                 {% if not user.is_authenticated %}
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         <a href="{% url 'register' %}" class="px-8 py-4 bg-white text-primary font-semibold rounded-lg hover:bg-gray-50 transition-colors">
-                            Crear Cuenta Gratis
+                            Registrarse
                         </a>
                         <a href="{% url 'login' %}" class="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors">
                             Iniciar Sesión
@@ -354,39 +371,6 @@
                     </p>
                 {% endif %}
             </div>
-        </div>
-    {% endif %}
-{% else %}
-    <!-- Vista para usuarios no autenticados -->
-    <div class="max-w-4xl mx-auto text-center py-16">
-        <h1 class="text-5xl font-light text-gray-900 dark:text-white mb-8">
-            Bienvenido a <span class="font-bold text-primary dark:text-primary-neon">PM</span>
-        </h1>
-        <p class="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
-            Para acceder a todas las funcionalidades de metaanálisis, necesitas tener una cuenta.
-        </p>
-        
-        <div class="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            <a href="{% url 'login' %}" class="block p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Iniciar Sesión</h3>
-                <p class="text-gray-600 dark:text-gray-300">¿Ya tienes cuenta? Accede a tu dashboard</p>
-            </a>
-            
-            <a href="{% url 'register' %}" class="block p-8 bg-gradient-to-br from-primary to-primary-dark text-white rounded-2xl hover:shadow-md transition-shadow">
-                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-3">Crear Cuenta</h3>
-                <p class="text-white text-opacity-90">Regístrate gratis y comienza tu primer análisis</p>
-            </a>
-        </div>
     </div>
 {% endif %}
 {% endblock %}

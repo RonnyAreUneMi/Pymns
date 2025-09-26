@@ -290,9 +290,8 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <select class="role-select bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:outline-none p-2.5 transition-all duration-200" 
-                                    data-user-id="{{ usuario.id }}" 
-                                    data-current-role="{{ usuario.profile.role.name|default:'sin-rol' }}">
-                                <option value="" {% if not usuario.profile.role %}selected{% endif %}>Sin rol</option>
+                                    data-user-id="{{ usuario.id }}">
+                                <option value="" {% if not usuario.profile.role %}selected{% endif %}></option>
                                 {% for role in roles %}
                                     <option value="{{ role.id }}" {% if usuario.profile.role.id == role.id %}selected{% endif %}>
                                         {{ role.name|capfirst }}

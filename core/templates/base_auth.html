@@ -140,3 +140,36 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+
+<!-- Vista para usuarios no autenticados
+    <div class="max-w-4xl mx-auto text-center py-16">
+        <h1 class="text-5xl font-light text-gray-900 dark:text-white mb-8">
+            Bienvenido a <span class="font-bold text-primary dark:text-primary-neon">PM</span>
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
+            Para acceder a todas las funcionalidades de metaanálisis, necesitas tener una cuenta.
+        </p>
+        
+        <div class="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+            <a href="{% url 'login' %}" class="block p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Iniciar Sesión</h3>
+                <p class="text-gray-600 dark:text-gray-300">¿Ya tienes cuenta? Accede a tu dashboard</p>
+            </a>
+            
+            <a href="{% url 'register' %}" class="block p-8 bg-gradient-to-br from-primary to-primary-dark text-white rounded-2xl hover:shadow-md transition-shadow">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Crear Cuenta</h3>
+                <p class="text-white text-opacity-90">Regístrate gratis y comienza tu primer análisis</p>
+            </a>
+        </div>
+    </div> -->

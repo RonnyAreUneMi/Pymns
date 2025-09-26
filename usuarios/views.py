@@ -397,3 +397,228 @@ def seguridad_accesos_view(request):
     }
     
     return render(request, 'usuarios/seguridad_accesos.html', context)
+
+def dashboard(request):
+    # Redirección directa para invitados sin mensajes
+    if request.user.profile.role.name == 'invitado':
+        return redirect('proyectos')
+    
+def proyectos_view(request):
+    """Vista para explorar proyectos públicos con filtros y búsqueda"""
+    
+    # Parámetros de búsqueda y filtros
+    search_query = request.GET.get('search', '').strip()
+    category_filter = request.GET.get('category', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    page = request.GET.get('page', 1)
+    per_page = int(request.GET.get('per_page', 20))
+    
+    # Query base para proyectos
+    from .models import Project, Category
+    
+    proyectos_query = Project.objects.select_related('categoria').filter(
+        is_public=True  # Solo proyectos públicos
+    )
+    
+    # Aplicar filtros de búsqueda si existe término de búsqueda
+    if search_query:
+        proyectos_query = proyectos_query.filter(
+            Q(nombre__icontains=search_query) |
+            Q(descripcion__icontains=search_query)
+        ).distinct()
+    
+    # Aplicar filtro por categoría si se especifica
+    if category_filter:
+        try:
+            proyectos_query = proyectos_query.filter(
+                categoria__nombre__iexact=category_filter
+            )
+        except Exception:
+            # Si hay error en el filtro, mantener query original
+            pass
+    
+    # Aplicar filtro por estado si se especifica
+    if status_filter:
+        proyectos_query = proyectos_query.filter(estado__iexact=status_filter)
+    
+    # Ordenar por fecha de creación (más recientes primero)
+    proyectos_query = proyectos_query.order_by('-fecha_creacion')
+    
+    # Obtener estadísticas
+    total_proyectos = Project.objects.filter(is_public=True).count()
+    proyectos_activos = Project.objects.filter(
+        is_public=True, 
+        estado__iexact='activo'
+    ).count()
+    
+    # Obtener categorías para el filtro
+    categorias = Category.objects.filter(
+        activa=True
+    ).distinct().order_by('nombre')
+    
+    # Obtener el conteo filtrado
+    filtered_count = proyectos_query.count()
+    
+    # Paginación
+    paginator = Paginator(proyectos_query, per_page)
+    
+    try:
+        proyectos_page = paginator.get_page(page)
+    except (PageNotAnInteger, EmptyPage):
+        proyectos_page = paginator.get_page(1)
+    
+    # Contexto para el template
+    context = {
+        'proyectos': proyectos_page,
+        'categorias': categorias,
+        'proyectos_activos': proyectos_activos,
+        'title': 'Explorar Proyectos',
+        'search_query': search_query,
+        'category_filter': category_filter,
+        'status_filter': status_filter,
+        'total_proyectos': total_proyectos,
+        'filtered_count': filtered_count,
+        'per_page': per_page,
+        'paginator': paginator,
+    }
+    
+    # Si es una petición AJAX (para búsqueda en tiempo real)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'html': render(request, 'proyectos_list_partial.html', context).content.decode('utf-8'),
+            'total_count': total_proyectos,
+            'filtered_count': filtered_count,
+            'shown_count': len(proyectos_page),
+            'has_next': proyectos_page.has_next(),
+            'has_previous': proyectos_page.has_previous(),
+            'current_page': proyectos_page.number,
+            'total_pages': paginator.num_pages,
+        })
+    
+    return render(request, 'proyectos.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def proyecto_detalle_ajax(request, proyecto_id):
+    """Vista AJAX para obtener detalles de un proyecto"""
+    try:
+        from .models import Project
+        
+        proyecto = get_object_or_404(
+            Project.objects.select_related('categoria'), 
+            id=proyecto_id,
+            is_public=True
+        )
+        
+        # Datos del proyecto para JSON
+        proyecto_data = {
+            'id': proyecto.id,
+            'nombre': proyecto.nombre,
+            'descripcion': proyecto.descripcion,
+            'categoria': {
+                'nombre': proyecto.categoria.nombre if proyecto.categoria else 'Sin categoría'
+            },
+            'estado': proyecto.get_estado_display(),
+            'fecha_creacion': proyecto.fecha_creacion.strftime('%d/%m/%Y') if proyecto.fecha_creacion else 'No disponible',
+            'fecha_actualizacion': proyecto.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if proyecto.fecha_actualizacion else 'No disponible',
+            'url_publica': proyecto.url_publica if proyecto.url_publica else None,
+            'url_repositorio': proyecto.url_repositorio if proyecto.url_repositorio else None,
+            'tecnologias': proyecto.get_tecnologias_list(),
+            'colaboradores': proyecto.get_colaboradores_names(),
+            'creado_por': proyecto.creado_por.get_full_name() or proyecto.creado_por.username,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'proyecto': proyecto_data
+        })
+        
+    except Project.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Proyecto no encontrado.'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error interno del servidor: {str(e)}'
+        }, status=500)
+
+
+def search_proyectos_ajax(request):
+    """Vista AJAX optimizada para búsqueda de proyectos en tiempo real"""
+    
+    search_query = request.GET.get('q', '').strip()
+    category_filter = request.GET.get('category', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 20))
+    
+    # Query optimizada
+    from .models import Project
+    
+    proyectos_query = Project.objects.select_related('categoria').filter(
+        is_public=True
+    )
+    
+    # Aplicar filtros de búsqueda
+    if search_query:
+        proyectos_query = proyectos_query.filter(
+            Q(nombre__icontains=search_query) |
+            Q(descripcion__icontains=search_query)
+        ).distinct()
+    
+    # Aplicar filtro por categoría
+    if category_filter:
+        try:
+            proyectos_query = proyectos_query.filter(
+                categoria__nombre__iexact=category_filter
+            )
+        except Exception:
+            pass
+    
+    # Aplicar filtro por estado
+    if status_filter:
+        proyectos_query = proyectos_query.filter(estado__iexact=status_filter)
+    
+    proyectos_query = proyectos_query.order_by('-fecha_creacion')
+    
+    # Paginación
+    paginator = Paginator(proyectos_query, per_page)
+    proyectos_page = paginator.get_page(page)
+    
+    # Preparar datos para JSON
+    proyectos_data = []
+    for proyecto in proyectos_page:
+        proyectos_data.append({
+            'id': proyecto.id,
+            'nombre': proyecto.nombre,
+            'descripcion': proyecto.descripcion[:100] + '...' if len(proyecto.descripcion) > 100 else proyecto.descripcion,
+            'categoria': {
+                'nombre': proyecto.categoria.nombre if proyecto.categoria else 'Sin categoría'
+            },
+            'estado': proyecto.get_estado_display(),
+            'fecha_creacion': proyecto.fecha_creacion.strftime('%d/%m/%Y') if proyecto.fecha_creacion else '--',
+            'url_publica': proyecto.url_publica if proyecto.url_publica else None,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'proyectos': proyectos_data,
+        'pagination': {
+            'current_page': proyectos_page.number,
+            'total_pages': paginator.num_pages,
+            'has_next': proyectos_page.has_next(),
+            'has_previous': proyectos_page.has_previous(),
+            'total_count': paginator.count,
+            'start_index': proyectos_page.start_index() if proyectos_page else 0,
+            'end_index': proyectos_page.end_index() if proyectos_page else 0,
+        },
+        'stats': {
+            'total_proyectos': Project.objects.filter(is_public=True).count(),
+            'filtered_count': paginator.count,
+            'shown_count': len(proyectos_page),
+            'proyectos_activos': Project.objects.filter(is_public=True, estado__iexact='activo').count(),
+        }
+    })
