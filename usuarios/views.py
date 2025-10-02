@@ -14,6 +14,18 @@ from django.contrib.auth.models import User
 import json
 from django.db import transaction
 
+
+def is_admin_or_superuser(user):
+    """
+    Función auxiliar para verificar si un usuario es administrador o superusuario
+    """
+    return user.is_superuser or (
+        hasattr(user, 'profile') and 
+        user.profile.role and 
+        user.profile.role.name == 'administrador'
+    )
+
+
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -29,6 +41,7 @@ def register_view(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'register.html', {'form': form})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -49,19 +62,19 @@ def login_view(request):
         form = CustomLoginForm()
     return render(request, 'login.html', {'form': form})
 
+
 def logout_view(request):
     logout(request)
     messages.info(request, 'Has cerrado sesión correctamente.')
     return redirect('core:home')  # Actualizado para usar el namespace
 
+
 @login_required 
 def usuarios_list_view(request):
-    # Verificar que el usuario sea administrador
-    if not (hasattr(request.user, 'profile') and 
-            request.user.profile.role and 
-            request.user.profile.role.name == 'administrador'):
+    # Verificar que el usuario sea administrador o superusuario
+    if not is_admin_or_superuser(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('core:home')  # Actualizado para usar el namespace
+        return redirect('core:home')
     
     # Parámetros de búsqueda y filtros
     search_query = request.GET.get('search', '').strip()
@@ -146,14 +159,13 @@ def usuarios_list_view(request):
     
     return render(request, 'usuarios_list.html', context)
 
+
 @login_required
 @require_http_methods(["POST"])
 @csrf_protect
 def delete_user_view(request, user_id):
-    # Verificar permisos de administrador
-    if not (hasattr(request.user, 'profile') and 
-            request.user.profile.role and 
-            request.user.profile.role.name == 'administrador'):
+    # Verificar permisos de administrador o superusuario
+    if not is_admin_or_superuser(request.user):
         return JsonResponse({
             'success': False, 
             'error': 'No tienes permisos para realizar esta acción.'
@@ -170,14 +182,24 @@ def delete_user_view(request, user_id):
                     'error': 'No puedes eliminarte a ti mismo.'
                 }, status=400)
             
-            # Verificar si es el único administrador
+            # Proteger superusuarios: no permitir eliminarlos
+            if user_to_delete.is_superuser:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se puede eliminar un superusuario del sistema.'
+                }, status=400)
+            
+            # Verificar si es el único administrador (sin contar superusuarios)
             admin_role = Role.objects.filter(name='administrador').first()
             if (admin_role and hasattr(user_to_delete, 'profile') and user_to_delete.profile.role == admin_role):
                 admin_count = User.objects.filter(
                     profile__role=admin_role
                 ).exclude(id=user_id).count()
                 
-                if admin_count == 0:
+                # Contar también superusuarios como administradores
+                superuser_count = User.objects.filter(is_superuser=True).exclude(id=user_id).count()
+                
+                if admin_count == 0 and superuser_count == 0:
                     return JsonResponse({
                         'success': False,
                         'error': 'No puedes eliminar el último administrador del sistema.'
@@ -202,14 +224,13 @@ def delete_user_view(request, user_id):
             'error': f'Error interno del servidor: {str(e)}'
         }, status=500)
 
+
 @login_required
 @require_http_methods(["POST"])
 @csrf_protect
 def change_user_role_view(request, user_id):
-    # Verificar permisos de administrador
-    if not (hasattr(request.user, 'profile') and 
-            request.user.profile.role and 
-            request.user.profile.role.name == 'administrador'):
+    # Verificar permisos de administrador o superusuario
+    if not is_admin_or_superuser(request.user):
         return JsonResponse({
             'success': False, 
             'error': 'No tienes permisos para realizar esta acción.'
@@ -237,11 +258,19 @@ def change_user_role_view(request, user_id):
             user_to_change = get_object_or_404(User, id=user_id)
             new_role = get_object_or_404(Role, id=new_role_id)
             
+            # No permitir cambiar roles a superusuarios
+            if user_to_change.is_superuser:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'No se puede cambiar el rol de un superusuario.'
+                }, status=400)
+            
             # Validaciones de seguridad
             admin_role = Role.objects.filter(name='administrador').first()
             
-            # No permitir que se quite a sí mismo el rol de administrador
+            # No permitir que se quite a sí mismo el rol de administrador (excepto superusuarios)
             if (user_to_change == request.user and 
+                not request.user.is_superuser and
                 hasattr(request.user, 'profile') and
                 request.user.profile.role == admin_role and 
                 new_role != admin_role):
@@ -255,7 +284,10 @@ def change_user_role_view(request, user_id):
                 user_to_change.profile.role == admin_role and 
                 new_role != admin_role):
                 admin_count = User.objects.filter(profile__role=admin_role).count()
-                if admin_count <= 1:
+                superuser_count = User.objects.filter(is_superuser=True).count()
+                
+                # Si hay superusuarios, siempre hay al menos un "administrador" en el sistema
+                if admin_count <= 1 and superuser_count == 0:
                     return JsonResponse({
                         'success': False,
                         'error': 'No puedes quitar el rol de administrador al último administrador del sistema.'
@@ -299,12 +331,11 @@ def change_user_role_view(request, user_id):
             'error': f'Error interno del servidor: {str(e)}'
         }, status=500)
 
+
 @login_required
 def search_users_ajax(request):
     """Vista AJAX optimizada para búsqueda de usuarios en tiempo real"""
-    if not (hasattr(request.user, 'profile') and 
-            request.user.profile.role and 
-            request.user.profile.role.name == 'administrador'):
+    if not is_admin_or_superuser(request.user):
         return JsonResponse({
             'success': False, 
             'error': 'No tienes permisos.'
@@ -352,6 +383,23 @@ def search_users_ajax(request):
     # Preparar datos para JSON
     usuarios_data = []
     for usuario in usuarios_page:
+        # Determinar el rol a mostrar
+        if usuario.is_superuser:
+            role_data = {
+                'id': None,
+                'name': 'Superusuario',
+            }
+        elif hasattr(usuario, 'profile') and usuario.profile.role:
+            role_data = {
+                'id': usuario.profile.role.id,
+                'name': usuario.profile.role.name,
+            }
+        else:
+            role_data = {
+                'id': None,
+                'name': 'Sin rol',
+            }
+        
         usuarios_data.append({
             'id': usuario.id,
             'username': usuario.username,
@@ -360,11 +408,9 @@ def search_users_ajax(request):
             'last_name': usuario.last_name,
             'full_name': usuario.get_full_name(),
             'date_joined': usuario.date_joined.strftime('%d/%m/%Y'),
-            'role': {
-                'id': usuario.profile.role.id if usuario.profile.role else None,
-                'name': usuario.profile.role.name if usuario.profile.role else 'Sin rol',
-            } if hasattr(usuario, 'profile') else None,
+            'role': role_data,
             'is_current_user': usuario == request.user,
+            'is_superuser': usuario.is_superuser,
         })
     
     return JsonResponse({
@@ -381,14 +427,13 @@ def search_users_ajax(request):
         }
     })
 
+
 @login_required 
 def seguridad_accesos_view(request):
-    # Verificar que el usuario sea administrador
-    if not (hasattr(request.user, 'profile') and 
-            request.user.profile.role and 
-            request.user.profile.role.name == 'administrador'):
+    # Verificar que el usuario sea administrador o superusuario
+    if not is_admin_or_superuser(request.user):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('core:home')  # Actualizado para usar el namespace
+        return redirect('core:home')
     
     context = {
         'title': 'Seguridad y Accesos',
@@ -396,6 +441,7 @@ def seguridad_accesos_view(request):
     }
     
     return render(request, 'usuarios/seguridad_accesos.html', context)
+
 
 @login_required
 def dashboard(request):
