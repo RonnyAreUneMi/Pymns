@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Profile, Role, Category, Project
+from .models import Profile, Role
 from .forms import CustomUserCreationForm # Importa el nuevo formulario
 
 # Desregistra el modelo User original para poder personalizarlo
@@ -36,5 +36,3 @@ class CustomUserAdmin(UserAdmin):
 # Mantén el registro de tus modelos Profile y Role
 admin.site.register(Profile)
 admin.site.register(Role)
-admin.site.register(Category)
-admin.site.register(Project)
