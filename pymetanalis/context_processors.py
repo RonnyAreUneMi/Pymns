@@ -1,4 +1,6 @@
-from .models import UsuarioProyecto
+# pymetanalis/context_processors.py
+
+from pymetanalis.models import UsuarioProyecto
 
 def user_project_roles(request):
     """
