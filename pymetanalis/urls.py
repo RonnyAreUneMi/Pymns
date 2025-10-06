@@ -9,6 +9,7 @@ urlpatterns = [
     path('', include('core.urls')),  # URLs del core, incluyendo el home
     path('usuarios/', include('usuarios.urls')),  # URLs de usuarios con prefijo
     path('security/', include('security.urls')),  # Faltaba la coma aquí
+    path('articulos/', include('articulos.urls')), 
     
     # URLs de proyectos (directamente en el proyecto principal)
     path('proyectos/crear/', views.crear_proyecto, name='crear_proyecto'),
