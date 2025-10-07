@@ -33,6 +33,9 @@
         </div>
     {% endif %}
 
+    <!-- Contenedor para notificaciones toast -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3 max-w-md"></div>
+
     <!-- Barra de Búsqueda y Filtros -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <form method="get" action="{% url 'buscar_proyectos' %}" class="space-y-4">
@@ -305,22 +308,33 @@
     {% endif %}
 </div>
 
-<!-- Modal para solicitar unirse (placeholder) -->
-<div id="modalSolicitud" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Solicitar unirse al proyecto</h3>
-        <p class="text-gray-600 dark:text-gray-400 mb-4">Proyecto: <strong id="nombreProyecto"></strong></p>
+<!-- Modal mejorado para solicitar unirse -->
+<div id="modalSolicitud" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Solicitar unirse</h3>
+            <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Proyecto:</p>
+            <p class="font-semibold text-gray-900 dark:text-white" id="nombreProyecto"></p>
+        </div>
         
         <form id="formSolicitud">
-            <div class="mb-4">
+            <div class="mb-6">
                 <label for="mensaje" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Mensaje (opcional)
+                    Mensaje al equipo <span class="text-gray-400">(opcional)</span>
                 </label>
                 <textarea 
                     id="mensaje"
                     rows="4"
-                    placeholder="Cuéntale al equipo por qué te gustaría unirte..."
-                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent transition-all resize-none"
+                    placeholder="Cuéntales por qué te gustaría unirte al proyecto..."
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent transition-all resize-none"
                 ></textarea>
             </div>
             
@@ -328,15 +342,19 @@
                 <button 
                     type="button"
                     onclick="cerrarModal()"
-                    class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium"
+                    class="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium"
                 >
                     Cancelar
                 </button>
                 <button 
                     type="submit"
-                    class="flex-1 px-4 py-2 btn-primary rounded-lg text-white font-semibold hover:shadow-lg transition-all"
+                    id="btnEnviarSolicitud"
+                    class="flex-1 px-4 py-3 btn-primary rounded-lg text-white font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2"
                 >
-                    Enviar Solicitud
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    <span>Enviar Solicitud</span>
                 </button>
             </div>
         </form>
@@ -346,45 +364,164 @@
 <script>
 let proyectoIdActual = null;
 
+// Función para mostrar notificaciones toast estilizadas
+function mostrarToast(mensaje, tipo = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    
+    const colores = {
+        success: 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300',
+        error: 'bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',
+        warning: 'bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300',
+        info: 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
+    };
+    
+    const iconos = {
+        success: '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
+        error: '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>',
+        warning: '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
+        info: '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>'
+    };
+    
+    toast.className = `${colores[tipo]} border rounded-xl shadow-xl p-4 transform transition-all duration-500 translate-x-full opacity-0`;
+    toast.innerHTML = `
+        <div class="flex items-start">
+            ${iconos[tipo]}
+            <div class="ml-3 flex-1">
+                <p class="text-sm font-medium">${mensaje}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 flex-shrink-0 inline-flex text-current opacity-70 hover:opacity-100 transition-opacity">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Animación de entrada
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full', 'opacity-0');
+    }, 10);
+    
+    // Auto-cerrar después de 5 segundos
+    setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => toast.remove(), 500);
+    }, 5000);
+}
+
 function solicitarUnirse(proyectoId, nombreProyecto) {
     proyectoIdActual = proyectoId;
     document.getElementById('nombreProyecto').textContent = nombreProyecto;
-    document.getElementById('modalSolicitud').classList.remove('hidden');
+    const modal = document.getElementById('modalSolicitud');
+    const modalContent = document.getElementById('modalContent');
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.add('opacity-100');
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
 }
 
 function cerrarModal() {
-    document.getElementById('modalSolicitud').classList.add('hidden');
-    document.getElementById('mensaje').value = '';
-    proyectoIdActual = null;
+    const modal = document.getElementById('modalSolicitud');
+    const modalContent = document.getElementById('modalContent');
+    
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('opacity-100');
+        document.getElementById('mensaje').value = '';
+        proyectoIdActual = null;
+    }, 300);
 }
 
+// Función para obtener el CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Manejo del formulario con notificaciones mejoradas y optimización
 document.getElementById('formSolicitud').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const mensaje = document.getElementById('mensaje').value;
+    const mensaje = document.getElementById('mensaje').value.trim();
+    const submitButton = document.getElementById('btnEnviarSolicitud');
+    const btnText = submitButton.querySelector('span');
+    const btnIcon = submitButton.querySelector('svg');
     
-    // Aquí deberás implementar la llamada AJAX para enviar la solicitud
-    // Por ahora solo mostramos un alert
-    alert('Funcionalidad de solicitud pendiente de implementación');
-    cerrarModal();
+    // Deshabilitar botón y mostrar estado de carga
+    submitButton.disabled = true;
+    submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+    btnText.textContent = 'Enviando...';
+    btnIcon.classList.add('animate-pulse');
     
-    // Ejemplo de lo que sería la implementación real:
-    /*
-    fetch(`/proyectos/${proyectoIdActual}/solicitar/`, {
+    // Hacer la petición AJAX con timeout reducido
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos máximo
+    
+    fetch(`/proyectos/${proyectoIdActual}/solicitar-unirse/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ mensaje: mensaje })
+        body: JSON.stringify({ mensaje: mensaje }),
+        signal: controller.signal
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeoutId);
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            location.reload();
+            cerrarModal();
+            mostrarToast(data.message || '¡Solicitud enviada exitosamente!', 'success');
+            
+            // Recargar la página después de un breve delay
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            mostrarToast(data.message || 'Error al enviar la solicitud', 'error');
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
+            btnText.textContent = 'Enviar Solicitud';
+            btnIcon.classList.remove('animate-pulse');
         }
+    })
+    .catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Error:', error);
+        
+        if (error.name === 'AbortError') {
+            mostrarToast('La solicitud tardó demasiado. Por favor, verifica tu conexión.', 'warning');
+        } else {
+            mostrarToast('Error de conexión. Por favor, intenta nuevamente.', 'error');
+        }
+        
+        submitButton.disabled = false;
+        submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
+        btnText.textContent = 'Enviar Solicitud';
+        btnIcon.classList.remove('animate-pulse');
     });
-    */
 });
 
 // Cerrar modal al hacer clic fuera
@@ -394,17 +531,34 @@ document.getElementById('modalSolicitud').addEventListener('click', function(e) 
     }
 });
 
-// Animación de entrada para las tarjetas
+// Cerrar modal con la tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('modalSolicitud').classList.contains('hidden')) {
+        cerrarModal();
+    }
+});
+
+// Animación de entrada para las tarjetas (optimizada)
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.grid > div');
-    cards.forEach((card, index) => {
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.transition = 'all 0.5s ease';
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 30);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    cards.forEach((card) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            card.style.transition = 'all 0.5s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 30);
+        observer.observe(card);
     });
 });
 </script>

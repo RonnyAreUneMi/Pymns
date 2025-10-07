@@ -97,3 +97,62 @@ class EstadisticaProyecto(models.Model):
 
     def __str__(self):
         return f"{self.proyecto.nombre} - {self.fecha}"
+class Notificacion(models.Model):
+    TIPO_CHOICES = [
+        ('solicitud_aceptada', 'Solicitud Aceptada'),
+        ('solicitud_rechazada', 'Solicitud Rechazada'),
+        ('invitacion_proyecto', 'Invitación a Proyecto'),
+        ('nueva_solicitud', 'Nueva Solicitud'),  # ← Esta es la que necesitas
+        ('cambio_rol', 'Cambio de Rol'),
+        ('general', 'General'),
+    ]
+    
+    usuario = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='notificaciones',
+        help_text='Usuario que recibe la notificación'
+    )
+    tipo = models.CharField(max_length=30, choices=TIPO_CHOICES)
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    leida = models.BooleanField(default=False)
+    url = models.CharField(max_length=500, blank=True, null=True)
+    
+    # Relaciones opcionales para contexto
+    proyecto = models.ForeignKey(
+        Proyecto, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='notificaciones'
+    )
+    solicitud = models.ForeignKey(
+        SolicitudProyecto,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notificaciones'
+    )
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_lectura = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Notificación'
+        verbose_name_plural = 'Notificaciones'
+        ordering = ['-fecha_creacion']
+        indexes = [
+            models.Index(fields=['usuario', 'leida', '-fecha_creacion']),
+        ]
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_tipo_display()} - {'Leída' if self.leida else 'No leída'}"
+    
+    def marcar_como_leida(self):
+        """Marca la notificación como leída"""
+        if not self.leida:
+            from django.utils import timezone
+            self.leida = True
+            self.fecha_lectura = timezone.now()
+            self.save(update_fields=['leida', 'fecha_lectura'])
