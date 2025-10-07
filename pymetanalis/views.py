@@ -299,8 +299,6 @@ def editar_proyecto(request, proyecto_id):
         'categorias': Proyecto.CATEGORIA_CHOICES,
         'estados': Proyecto.ESTADO_CHOICES,
     })
-
-
 # ==================== SOLICITUDES Y MIEMBROS ====================
 
 @login_required
@@ -1045,4 +1043,95 @@ def eliminar_miembro(request, proyecto_id, usuario_id):
         return JsonResponse({
             'success': False,
             'message': f'Error al eliminar el miembro: {str(e)}'
+        }, status=500)
+@login_required
+@require_POST
+def abandonar_proyecto(request, proyecto_id):
+    """Vista para que un usuario abandone voluntariamente un proyecto"""
+    
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Petición no válida'}, status=400)
+    
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+        
+        # Obtener la membresía del usuario
+        miembro = UsuarioProyecto.objects.filter(
+            usuario=request.user,
+            proyecto=proyecto
+        ).first()
+        
+        if not miembro:
+            return JsonResponse({
+                'success': False,
+                'message': 'No eres miembro de este proyecto.'
+            }, status=400)
+        
+        # El dueño no puede abandonar su propio proyecto
+        if miembro.rol_proyecto == 'DUEÑO':
+            return JsonResponse({
+                'success': False,
+                'message': 'No puedes abandonar un proyecto del que eres dueño. Debes transferir la propiedad primero o eliminar el proyecto.'
+            }, status=400)
+        
+        # Guardar datos antes de eliminar
+        nombre_proyecto = proyecto.nombre
+        nombre_usuario = request.user.get_full_name() or request.user.username
+        
+        with transaction.atomic():
+            # Eliminar la membresía
+            miembro.delete()
+            
+            # Notificar al dueño del proyecto (IN-APP)
+            try:
+                dueno = UsuarioProyecto.objects.get(
+                    proyecto=proyecto,
+                    rol_proyecto='DUEÑO'
+                ).usuario
+                
+                # Crear notificación in-app
+                crear_notificacion(
+                    usuario=dueno,
+                    tipo='general',
+                    titulo=f'Miembro abandonó proyecto - {nombre_proyecto}',
+                    mensaje=f'{nombre_usuario} ha abandonado el proyecto "{nombre_proyecto}".',
+                    url=reverse('detalle_proyecto', args=[proyecto.id]),
+                    proyecto=proyecto
+                )
+                
+                # Enviar email al dueño
+                if dueno.email:
+                    try:
+                        send_mail(
+                            f'Miembro abandonó proyecto - {nombre_proyecto}',
+                            f"""Hola {dueno.get_full_name() or dueno.username},
+
+Te informamos que {nombre_usuario} ha abandonado el proyecto "{nombre_proyecto}".
+
+Puedes revisar el estado del proyecto aquí:
+{request.build_absolute_uri(reverse('detalle_proyecto', args=[proyecto.id]))}
+
+Saludos,
+Equipo de Metaanálisis
+""",
+                            settings.DEFAULT_FROM_EMAIL,
+                            [dueno.email],
+                            fail_silently=True,
+                        )
+                    except Exception as e:
+                        print(f"Error enviando email: {e}")
+                        
+            except UsuarioProyecto.DoesNotExist:
+                pass
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Has abandonado el proyecto "{nombre_proyecto}".',
+            'redirect': reverse('mis_proyectos')
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al abandonar el proyecto: {str(e)}'
         }, status=500)

@@ -28,4 +28,6 @@ urlpatterns = [
     path('notificaciones/marcar-todas-leidas/', views.marcar_todas_notificaciones_leidas, name='marcar_todas_notificaciones_leidas'),
     path('proyectos/<int:proyecto_id>/miembro/<int:usuario_id>/cambiar-rol/', views.cambiar_rol_miembro, name='cambiar_rol_miembro'),
     path('proyectos/<int:proyecto_id>/miembro/<int:usuario_id>/eliminar/', views.eliminar_miembro, name='eliminar_miembro'),
+    path('proyectos/<int:proyecto_id>/abandonar/', views.abandonar_proyecto, name='abandonar_proyecto'),
+
 ]
