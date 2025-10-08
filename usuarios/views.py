@@ -26,22 +26,54 @@ def is_admin_or_superuser(user):
     )
 
 
+from django.contrib.auth import login
+
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()  # Esto dispara el signal y crea el perfil automáticamente
-            messages.success(request, 'Cuenta creada exitosamente. Ahora puedes iniciar sesión.')
-            return redirect('login')
+            
+            # Login automático después del registro
+            login(request, user)
+            
+            # Verificar si hay una invitación pendiente en la sesión
+            invitacion_token = request.session.get('invitacion_token')
+            if invitacion_token:
+                # Limpiar la sesión
+                del request.session['invitacion_token']
+                if 'invitacion_email' in request.session:
+                    del request.session['invitacion_email']
+                
+                messages.success(request, 'Cuenta creada exitosamente. Procesando tu invitación...')
+                # Redirigir a aceptar la invitación
+                return redirect('aceptar_invitacion', token=invitacion_token)
+            
+            messages.success(request, 'Cuenta creada exitosamente. ¡Bienvenido!')
+            return redirect('core:home')  # o la página que prefieras
         else:
             # Agregar mensajes de error
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = CustomUserCreationForm()
+        # Pre-llenar el email si viene de una invitación
+        initial_data = {}
+        email_from_url = request.GET.get('email')
+        email_from_session = request.session.get('invitacion_email')
+        
+        if email_from_url:
+            initial_data['email'] = email_from_url
+        elif email_from_session:
+            initial_data['email'] = email_from_session
+        
+        form = CustomUserCreationForm(initial=initial_data)
+        
+        # Mostrar mensaje informativo si viene de una invitación
+        if email_from_url or email_from_session:
+            messages.info(request, f'Crea tu cuenta con el email {email_from_url or email_from_session} para aceptar la invitación.')
+    
     return render(request, 'register.html', {'form': form})
-
 
 def login_view(request):
     if request.method == 'POST':

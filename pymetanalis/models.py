@@ -156,3 +156,14 @@ class Notificacion(models.Model):
             self.leida = True
             self.fecha_lectura = timezone.now()
             self.save(update_fields=['leida', 'fecha_lectura'])
+class Invitacion(models.Model):
+    proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='invitaciones')
+    email_destino = models.EmailField()
+    token = models.CharField(max_length=100, unique=True)
+    creado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitaciones_enviadas')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_aceptacion = models.DateTimeField(null=True, blank=True)
+    aceptado = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Invitación a {self.email_destino} para {self.proyecto.nombre}"

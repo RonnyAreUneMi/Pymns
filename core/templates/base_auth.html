@@ -29,49 +29,27 @@
                 }
             }
         }
-
-        // Dark mode functionality
-        function initDarkMode() {
-            console.log('Inicializando modo oscuro...');
-            const isDark = localStorage.getItem('darkMode') === 'true' || 
-                          (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            
-            console.log('¿Modo oscuro detectado?', isDark);
-            
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                console.log('Clase dark añadida');
-            } else {
-                document.documentElement.classList.remove('dark');
-                console.log('Clase dark removida');
-            }
-        }
-        
-        function toggleDarkMode() {
-            console.log('Toggle dark mode ejecutado');
-            const isDark = document.documentElement.classList.contains('dark');
-            console.log('¿Está en modo oscuro actualmente?', isDark);
-            
-            if (isDark) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('darkMode', 'false');
-                console.log('Cambiando a modo claro');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('darkMode', 'true');
-                console.log('Cambiando a modo oscuro');
-            }
-            
-            const newState = document.documentElement.classList.contains('dark');
-            console.log('Nuevo estado después del toggle:', newState);
-        }
-
-        // Inicializar dark mode inmediatamente
-        initDarkMode();
     </script>
+    
+    <!-- Inicializar dark mode ANTES de renderizar -->
+    <script>
+        (function() {
+            // Verificar si hay preferencia guardada o usar preferencia del sistema
+            const savedMode = localStorage.getItem('darkMode');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Si hay modo guardado, usarlo; sino usar preferencia del sistema
+            const isDark = savedMode === 'true' || (savedMode === null && prefersDark);
+            
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+    
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors duration-300">
     
     <!-- Header simple para auth -->
     <header class="absolute top-0 left-0 right-0 z-20">
@@ -79,24 +57,43 @@
             <div class="flex items-center justify-between">
                 <!-- Logo y título (izquierda) -->
                 <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden transition-colors duration-300">
                         <img src="{% static 'core/templates/img/logo.png' %}" alt="PM Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="w-full h-full bg-primary dark:bg-primary-neon flex items-center justify-center text-white font-bold text-xs" style="display: none;">
+                        <div class="w-full h-full bg-primary dark:bg-primary-neon flex items-center justify-center text-white font-bold text-xs transition-colors duration-300" style="display: none;">
                             PM
                         </div>
                     </div>
-                    <a href="{% url 'core:home' %}" class="text-2xl font-bold text-primary dark:text-primary-neon tracking-wide hover:opacity-80 transition-opacity">
+                    <a href="{% url 'core:home' %}" class="text-2xl font-bold text-primary dark:text-primary-neon tracking-wide hover:opacity-80 transition-all duration-300">
                         PM
                     </a>
                 </div>
                 
                 <!-- Toggle modo oscuro (derecha) -->
                 <div class="flex items-center space-x-4">
-                    <button id="darkModeToggle" onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors">
-                        <svg id="sunIcon" class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button 
+                        id="darkModeToggle" 
+                        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-all duration-300 relative"
+                        aria-label="Cambiar tema"
+                    >
+                        <!-- Icono de Sol (modo claro activo) -->
+                        <svg 
+                            id="sunIcon" 
+                            class="w-5 h-5 transition-all duration-300 dark:opacity-0 dark:rotate-180 dark:scale-0" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                        >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        <svg id="moonIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        
+                        <!-- Icono de Luna (modo oscuro activo) -->
+                        <svg 
+                            id="moonIcon" 
+                            class="w-5 h-5 absolute top-2 left-2 transition-all duration-300 opacity-0 rotate-180 scale-0 dark:opacity-100 dark:rotate-0 dark:scale-100" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                        >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                         </svg>
                     </button>
@@ -110,21 +107,30 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Scripts base (dark mode y efectos generales) -->
+    <!-- Scripts base -->
     <script>
-        // Inicialización base después de cargar DOM
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado - Base Auth');
+        // Función para cambiar entre modo claro y oscuro
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDarkNow = html.classList.contains('dark');
             
-            // Configurar dark mode toggle
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            if (darkModeToggle) {
-                // Método adicional por si onclick no funciona
-                darkModeToggle.addEventListener('click', function(e) {
-                    console.log('Click detectado en el botón dark mode');
-                    e.preventDefault();
-                    toggleDarkMode();
-                });
+            if (isDarkNow) {
+                // Cambiar a modo claro
+                html.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                // Cambiar a modo oscuro
+                html.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            }
+        }
+
+        // Inicialización después de cargar DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar el botón de dark mode
+            const darkModeBtn = document.getElementById('darkModeToggle');
+            if (darkModeBtn) {
+                darkModeBtn.addEventListener('click', toggleDarkMode);
             }
             
             // Efecto de carga suave
@@ -133,43 +139,10 @@
                 document.body.style.transition = 'opacity 0.3s ease';
                 document.body.style.opacity = '1';
             }, 100);
-        });
+        }, { once: true });
     </script>
     
     <!-- Scripts específicos de la página -->
     {% block extra_js %}{% endblock %}
 </body>
 </html>
-
-
-<!-- Vista para usuarios no autenticados
-    <div class="max-w-4xl mx-auto text-center py-16">
-        <h1 class="text-5xl font-light text-gray-900 dark:text-white mb-8">
-            Bienvenido a <span class="font-bold text-primary dark:text-primary-neon">PM</span>
-        </h1>
-        <p class="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
-            Para acceder a todas las funcionalidades de metaanálisis, necesitas tener una cuenta.
-        </p>
-        
-        <div class="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            <a href="{% url 'login' %}" class="block p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Iniciar Sesión</h3>
-                <p class="text-gray-600 dark:text-gray-300">¿Ya tienes cuenta? Accede a tu dashboard</p>
-            </a>
-            
-            <a href="{% url 'register' %}" class="block p-8 bg-gradient-to-br from-primary to-primary-dark text-white rounded-2xl hover:shadow-md transition-shadow">
-                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-3">Crear Cuenta</h3>
-                <p class="text-white text-opacity-90">Regístrate gratis y comienza tu primer análisis</p>
-            </a>
-        </div>
-    </div> -->

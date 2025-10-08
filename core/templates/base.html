@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/cabeza.png' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/cabeza.png' %}">
     <title>{% block title %}Mi Proyecto de Metaanálisis{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -31,7 +34,7 @@
             }
         }
     </script>
-    <style>
+<style>
         * {
             transition: all 0.3s ease;
         }
@@ -54,12 +57,14 @@
             }
         }
         
+        /* BOTONES PRIMARIOS - CORREGIDOS */
         .btn-primary {
             background: linear-gradient(135deg, #FF896C, #FF5722);
             box-shadow: 0 4px 15px rgba(255, 137, 108, 0.3);
         }
         
         .btn-primary:hover {
+            background: linear-gradient(135deg, #FF5722, #E64A19);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(255, 137, 108, 0.4);
         }
@@ -68,9 +73,27 @@
             background: linear-gradient(135deg, #FF6B35, #FF4500);
             box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5);
         }
+
+        .dark .btn-primary:hover {
+            background: linear-gradient(135deg, #FF4500, #D43F00);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.6);
+        }
         
         .dark .sidebar {
             box-shadow: 4px 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        /* MENÚ SIDEBAR - CORREGIDO */
+        .sidebar nav a {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .sidebar nav a.bg-white.bg-opacity-20 {
+            background-color: rgba(255, 255, 255, 0.2) !important;
         }
 
         .menu-section {
@@ -92,6 +115,100 @@
             letter-spacing: 0.05em;
             margin-bottom: 0.75rem;
             font-weight: 500;
+        }
+
+        /* CORRECCIONES DE HOVER PARA ENLACES Y BOTONES */
+        a.hover\:text-primary:hover,
+        .hover\:text-primary:hover {
+            color: #FF896C !important;
+        }
+
+        .dark a.hover\:text-primary-neon:hover,
+        .dark .hover\:text-primary-neon:hover {
+            color: #FF6B35 !important;
+        }
+
+        a.hover\:text-primary-dark:hover,
+        .hover\:text-primary-dark:hover {
+            color: #FF5722 !important;
+        }
+
+        .dark a.hover\:text-primary:hover,
+        .dark .hover\:text-primary:hover {
+            color: #FF896C !important;
+        }
+
+        /* CORRECCIONES PARA BOTONES SECUNDARIOS */
+        .bg-white.hover\:bg-gray-50:hover {
+            background-color: rgb(249, 250, 251) !important;
+        }
+
+        .bg-white.hover\:bg-gray-100:hover {
+            background-color: rgb(243, 244, 246) !important;
+        }
+
+        .dark .bg-white.hover\:bg-gray-50:hover,
+        .dark .bg-white.hover\:bg-gray-100:hover {
+            background-color: rgb(55, 65, 81) !important;
+        }
+
+        .dark .dark\:bg-gray-800.dark\:hover\:bg-gray-700:hover {
+            background-color: rgb(55, 65, 81) !important;
+        }
+
+        /* CORRECCIONES PARA TOGGLES Y BOTONES DE ICONO */
+        .bg-gray-100.hover\:bg-gray-200:hover {
+            background-color: rgb(229, 231, 235) !important;
+        }
+
+        .dark .dark\:bg-gray-700.dark\:hover\:bg-gray-600:hover {
+            background-color: rgb(75, 85, 99) !important;
+        }
+
+        /* CORRECCIONES PARA CARDS */
+        .hover\:shadow-xl:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        .dark .hover\:shadow-xl:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .hover\:border-primary:hover {
+            border-color: #FF896C !important;
+        }
+
+        .dark .hover\:border-primary-neon:hover,
+        .dark .dark\:hover\:border-primary-neon:hover {
+            border-color: #FF6B35 !important;
+        }
+
+        /* CORRECCIONES PARA DROPDOWNS */
+        .hover\:bg-gray-100:hover {
+            background-color: rgb(243, 244, 246) !important;
+        }
+
+        .dark .hover\:bg-gray-700:hover,
+        .dark .dark\:hover\:bg-gray-700:hover {
+            background-color: rgb(55, 65, 81) !important;
+        }
+
+        .hover\:bg-gray-50:hover {
+            background-color: rgb(249, 250, 251) !important;
+        }
+
+        .dark .hover\:bg-gray-800:hover,
+        .dark .dark\:hover\:bg-gray-800:hover {
+            background-color: rgb(31, 41, 55) !important;
+        }
+
+        /* CORRECCIONES PARA HOVER EN TEXTO ROJO (CERRAR SESIÓN) */
+        .hover\:bg-red-50:hover {
+            background-color: rgb(254, 242, 242) !important;
+        }
+
+        .dark .dark\:hover\:bg-red-900:hover {
+            background-color: rgba(127, 29, 29, 0.2) !important;
         }
 
         /* Animación para mensajes */
@@ -120,6 +237,191 @@
                 transform: translateY(-10px);
             }
         }
+
+        /* Estilos mejorados para notificaciones */
+        #notificationsDropdown {
+            backdrop-filter: blur(10px);
+        }
+
+        .dark #notificationsDropdown {
+            background-color: rgba(31, 41, 55, 0.95);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification-item {
+            border-left-width: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background-color: rgba(249, 250, 251, 0.8) !important;
+        }
+
+        .dark .notification-item:hover {
+            background-color: rgba(55, 65, 81, 0.6) !important;
+        }
+
+        .notification-item.unread {
+            background-color: rgba(255, 137, 108, 0.05);
+        }
+
+        .dark .notification-item.unread {
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+
+        .notification-icon {
+            background: linear-gradient(135deg, rgba(255, 137, 108, 0.1), rgba(255, 87, 34, 0.1));
+        }
+
+        .dark .notification-icon {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 69, 0, 0.15));
+        }
+
+        /* Scrollbar personalizado */
+        #notificationsList::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #notificationsList::-webkit-scrollbar-track {
+            background: rgba(243, 244, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        .dark #notificationsList::-webkit-scrollbar-track {
+            background: rgba(55, 65, 81, 0.3);
+        }
+
+        #notificationsList::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+
+        .dark #notificationsList::-webkit-scrollbar-thumb {
+            background: rgba(107, 114, 128, 0.5);
+        }
+
+        #notificationsList::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.7);
+        }
+
+        .dark #notificationsList::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Badge de notificaciones con animación */
+        #notificationBadge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .8;
+            }
+        }
+
+        /* Mejoras en el footer del dropdown */
+        .notification-footer {
+            background: linear-gradient(to top, rgba(249, 250, 251, 1), rgba(249, 250, 251, 0.8));
+        }
+
+        .dark .notification-footer {
+            background: linear-gradient(to top, rgba(31, 41, 55, 1), rgba(31, 41, 55, 0.8));
+        }
+
+        /* Header del dropdown */
+        .notification-header {
+            background: linear-gradient(to bottom, rgba(249, 250, 251, 1), rgba(249, 250, 251, 0.8));
+        }
+
+        .dark .notification-header {
+            background: linear-gradient(to bottom, rgba(31, 41, 55, 1), rgba(31, 41, 55, 0.8));
+        }
+
+        /* CORRECCIONES PARA INPUTS Y SELECTS */
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            border-color: #FF896C !important;
+            box-shadow: 0 0 0 3px rgba(255, 137, 108, 0.1) !important;
+        }
+
+        .dark input[type="text"]:focus,
+        .dark input[type="email"]:focus,
+        .dark input[type="password"]:focus,
+        .dark input[type="number"]:focus,
+        .dark select:focus,
+        .dark textarea:focus {
+            border-color: #FF6B35 !important;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15) !important;
+        }
+
+        /* REMOVER RING Y OUTLINE DEFAULT DE TAILWIND */
+        input:focus,
+        select:focus,
+        textarea:focus,
+        button:focus {
+            --tw-ring-shadow: none !important;
+            --tw-ring-offset-shadow: none !important;
+            outline: none !important;
+        }
+
+        /* PREVENIR DOBLE BORDE EN FOCUS */
+        .focus\:ring-2:focus {
+            --tw-ring-shadow: none !important;
+        }
+
+        .focus\:border-transparent:focus {
+            border-color: #FF896C !important;
+        }
+
+        .dark .focus\:border-transparent:focus {
+            border-color: #FF6B35 !important;
+        }
+
+        /* PREVENCIÓN DE FONDOS NEGROS GENERALES */
+        button:hover:not(.btn-primary):not([class*="bg-"]) {
+            background-color: transparent;
+        }
+
+        a:hover:not([class*="bg-"]) {
+            background-color: transparent;
+        }
+
+        /* ASEGURAR TRANSICIONES SUAVES */
+        button, a, div[class*="hover"], input, select, textarea {
+            transition: all 0.2s ease;
+        }
+
+        /* CORRECCIÓN ESPECÍFICA PARA BOTONES CON GRADIENTE */
+        button[class*="gradient"], 
+        .bg-gradient-to-r {
+            transition: all 0.3s ease;
+        }
+
+        button[class*="gradient"]:hover, 
+        .bg-gradient-to-r:hover {
+            transform: translateY(-2px);
+        }
+
+        /* PREVENIR CUALQUIER BACKGROUND BLACK */
+        *:hover {
+            background-color: inherit;
+        }
+
+        /* EXCEPCIONES NECESARIAS */
+        .btn-primary:hover,
+        .sidebar nav a:hover,
+        .notification-item:hover,
+        [class*="hover:bg-"]:hover {
+            background-color: revert !important;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -132,10 +434,11 @@
             <div class="p-6 pt-20 h-full overflow-y-auto">
                 <div class="flex items-center justify-between mb-8">
                     <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center overflow-hidden">
-                            <img src="{% static 'core/img/logo.png' %}" alt="PM Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="w-full h-full bg-white bg-opacity-20 flex items-center justify-center text-white font-bold text-sm" style="display: none;">
-                            </div>
+                    <div class="flex items-center justify-center">
+                        <img src="{% static 'img/hola3.png' %}" alt="PM Logo" class="w-14 h-14 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-14 h-14 flex items-center justify-center text-white font-bold text-2xl" style="display: none;">
+                            PM
+                    </div>
                         </div>
                         <h2 class="text-lg font-bold text-white">Dashboard</h2>
                     </div>
@@ -218,12 +521,14 @@
                                     </svg>
                                     <span>Buscar Proyectos</span>
                                 </a>
+                                {% if can_create_projects %}
                                 <a href="{% url 'crear_proyecto' %}" class="flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200">
                                     <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
                                     <span>Crear Proyecto</span>
                                 </a>
+                                {% endif %}
                                 <a href="{% url 'mis_proyectos' %}" class="flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200">
                                     <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -233,7 +538,7 @@
                             </div>
 
                         {% else %}
-                            <!-- MENÚ INVITADO -->
+                            <!-- MENÚ INVITADO O OTROS ROLES -->
                             <div class="menu-section">
                                 <p class="menu-section-title">Panel Principal</p>
                                 <a href="{% url 'core:home' %}" class="flex items-center px-4 py-3 text-white {% if request.resolver_match.url_name == 'home' %}bg-white bg-opacity-20{% else %}hover:bg-white hover:bg-opacity-10{% endif %} rounded-lg transition-all duration-200">
@@ -252,6 +557,14 @@
                                     </svg>
                                     <span>Buscar Proyectos</span>
                                 </a>
+                                {% if has_any_project_role %}
+                                <a href="{% url 'mis_proyectos' %}" class="flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200">
+                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>Mis Proyectos</span>
+                                </a>
+                                {% endif %}
                             </div>
                         {% endif %}
 
@@ -307,7 +620,7 @@
                             
                             <div class="flex items-center space-x-3">
                                 <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                                    <img src="{% static 'core/img/logo.png' %}" alt="PM Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <img src="{% static 'img/hola.png' %}" alt="PM Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                     <div class="w-full h-full bg-primary dark:bg-primary-neon flex items-center justify-center text-white font-bold text-xs" style="display: none;">
                                         PM
                                     </div>
@@ -319,7 +632,7 @@
                         </div>
                         
                         <div class="flex items-center space-x-4">
-                            <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300">
+                            <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors">
                                 <svg id="sunIcon" class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                                 </svg>
@@ -327,309 +640,81 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                                 </svg>
                             </button>
-                            <!-- Agregar este bloque justo después del botón de Dark Mode en el header -->
-                        <!-- SISTEMA DE NOTIFICACIONES -->
-                        {% if user.is_authenticated %}
-                        <div class="relative">
-                            <button id="notificationsButton" class="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                                </svg>
-                                <!-- Badge de notificaciones no leídas -->
-                                <span id="notificationBadge" class="absolute top-0 right-0 hidden w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
-                                    0
-                                </span>
-                            </button>
+                            
+                            <!-- SISTEMA DE NOTIFICACIONES -->
+                            {% if user.is_authenticated %}
+                            <div class="relative">
+                                <button id="notificationsButton" class="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                                    </svg>
+                                    <!-- Badge de notificaciones no leídas -->
+                                    <span id="notificationBadge" class="absolute top-0 right-0 hidden w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
+                                        0
+                                    </span>
+                                </button>
 
-                            <!-- Dropdown de Notificaciones -->
-                            <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[32rem] overflow-hidden flex flex-col">
-                                <!-- Header del Dropdown -->
-                                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-750">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
-                                    <button id="markAllAsRead" class="text-xs text-primary hover:text-primary-dark dark:text-primary-neon transition-colors font-medium">
-                                        Marcar todas como leídas
-                                    </button>
-                                </div>
-
-                                <!-- Lista de Notificaciones (con scroll) -->
-                                <div id="notificationsList" class="overflow-y-auto flex-1" style="max-height: 400px;">
-                                    <!-- Notificaciones se cargarán aquí dinámicamente -->
-                                    <div id="noNotifications" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                        </svg>
-                                        <p class="text-sm">No tienes notificaciones nuevas</p>
+                                <!-- Dropdown de Notificaciones -->
+                                <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[32rem] overflow-hidden flex flex-col">
+                                    <!-- Header del Dropdown -->
+                                    <div class="notification-header px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
+                                        <button id="markAllAsRead" class="text-xs text-primary hover:text-primary-dark dark:text-primary-neon dark:hover:text-primary transition-colors font-medium">
+                                            Marcar todas como leídas
+                                        </button>
                                     </div>
-                                </div>
 
-                                <!-- Footer con link a ver todas -->
-                                <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-                                    <a href="{#}" class="block text-center text-sm text-primary hover:text-primary-dark dark:text-primary-neon transition-colors font-medium">
-                                        Ver todas las notificaciones
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
+                                    <!-- Lista de Notificaciones (con scroll) -->
+                                    <div id="notificationsList" class="overflow-y-auto flex-1" style="max-height: 400px;">
+                                        <!-- Notificaciones se cargarán aquí dinámicamente -->
+                                        <div id="noNotifications" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                            </svg>
+                                            <p class="text-sm">No tienes notificaciones nuevas</p>
+                                        </div>
+                                    </div>
 
-                        <!-- Template para notificación individual (oculto, se clonará con JS) -->
-                        <template id="notificationTemplate">
-                            <div class="notification-item px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-l-4" data-notification-id="">
-                                <div class="flex items-start space-x-3">
-                                    <!-- Icono dinámico según tipo -->
-                                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center notification-icon">
-                                        <!-- SVG se insertará aquí -->
-                                    </div>
-                                    
-                                    <!-- Contenido -->
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-white notification-title">
-                                            <!-- Título -->
-                                        </p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 notification-message mt-1">
-                                            <!-- Mensaje -->
-                                        </p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1 notification-time">
-                                            <!-- Tiempo -->
-                                        </p>
-                                    </div>
-                                    
-                                    <!-- Indicador de no leída -->
-                                    <div class="flex-shrink-0">
-                                        <span class="notification-unread-dot w-2 h-2 bg-primary rounded-full block"></span>
+                                    <!-- Footer con link a ver todas -->
+                                    <div class="notification-footer px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                                        <a href="#" class="block text-center text-sm text-primary hover:text-primary-dark dark:text-primary-neon dark:hover:text-primary transition-colors font-medium">
+                                            Ver todas las notificaciones
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        </template>
+                            {% endif %}
 
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const notificationsButton = document.getElementById('notificationsButton');
-                            const notificationsDropdown = document.getElementById('notificationsDropdown');
-                            const notificationBadge = document.getElementById('notificationBadge');
-                            const notificationsList = document.getElementById('notificationsList');
-                            const noNotifications = document.getElementById('noNotifications');
-                            const markAllAsReadBtn = document.getElementById('markAllAsRead');
-                            const notificationTemplate = document.getElementById('notificationTemplate');
+                            <!-- Template para notificación individual (oculto, se clonará con JS) -->
+                            <template id="notificationTemplate">
+                                <div class="notification-item px-4 py-3 cursor-pointer transition-all duration-200" data-notification-id="">
+                                    <div class="flex items-start space-x-3">
+                                        <!-- Icono dinámico según tipo -->
+                                        <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center notification-icon">
+                                            <!-- SVG se insertará aquí -->
+                                        </div>
+                                        
+                                        <!-- Contenido -->
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white notification-title">
+                                                <!-- Título -->
+                                            </p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 notification-message mt-1">
+                                                <!-- Mensaje -->
+                                            </p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 notification-time">
+                                                <!-- Tiempo -->
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Indicador de no leída -->
+                                        <div class="flex-shrink-0">
+                                            <span class="notification-unread-dot w-2 h-2 bg-primary dark:bg-primary-neon rounded-full block"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
-                            // Toggle dropdown
-                            notificationsButton?.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                notificationsDropdown.classList.toggle('hidden');
-                                
-                                // Cargar notificaciones al abrir
-                                if (!notificationsDropdown.classList.contains('hidden')) {
-                                    cargarNotificaciones();
-                                }
-                            });
-
-                            // Cerrar al hacer click fuera
-                            document.addEventListener('click', function(e) {
-                                if (notificationsDropdown && 
-                                    !notificationsDropdown.contains(e.target) && 
-                                    !notificationsButton.contains(e.target)) {
-                                    notificationsDropdown.classList.add('hidden');
-                                }
-                            });
-
-                            // Cerrar con ESC
-                            document.addEventListener('keydown', function(e) {
-                                if (e.key === 'Escape' && !notificationsDropdown.classList.contains('hidden')) {
-                                    notificationsDropdown.classList.add('hidden');
-                                }
-                            });
-
-                            // Marcar todas como leídas
-                            markAllAsReadBtn?.addEventListener('click', function() {
-                                marcarTodasComoLeidas();
-                            });
-
-                            // Función para cargar notificaciones
-                            function cargarNotificaciones() {
-                                fetch('/notificaciones/obtener/', {
-                                    method: 'GET',
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    actualizarListaNotificaciones(data.notificaciones);
-                                    actualizarBadge(data.no_leidas);
-                                })
-                                .catch(error => {
-                                    console.error('Error cargando notificaciones:', error);
-                                });
-                            }
-
-                            // Actualizar lista de notificaciones
-                            function actualizarListaNotificaciones(notificaciones) {
-                                // Limpiar lista actual (excepto el mensaje de "no hay notificaciones")
-                                const items = notificationsList.querySelectorAll('.notification-item');
-                                items.forEach(item => item.remove());
-
-                                if (notificaciones.length === 0) {
-                                    noNotifications.classList.remove('hidden');
-                                    return;
-                                }
-
-                                noNotifications.classList.add('hidden');
-
-                                notificaciones.forEach(notif => {
-                                    const notifElement = crearElementoNotificacion(notif);
-                                    notificationsList.insertBefore(notifElement, noNotifications);
-                                });
-                            }
-
-                            // Crear elemento de notificación
-                            function crearElementoNotificacion(notif) {
-                                const template = notificationTemplate.content.cloneNode(true);
-                                const notifDiv = template.querySelector('.notification-item');
-                                
-                                // Configurar atributos
-                                notifDiv.dataset.notificationId = notif.id;
-                                
-                                // Configurar estilos según si está leída
-                                if (notif.leida) {
-                                    notifDiv.classList.add('border-transparent', 'opacity-75');
-                                    const dot = notifDiv.querySelector('.notification-unread-dot');
-                                    dot.classList.add('hidden');
-                                } else {
-                                    notifDiv.classList.add('border-primary', 'dark:border-primary-neon');
-                                }
-
-                                // Configurar icono según tipo
-                                const iconContainer = notifDiv.querySelector('.notification-icon');
-                                const iconHTML = getIconoNotificacion(notif.tipo);
-                                iconContainer.innerHTML = iconHTML;
-
-                                // Configurar contenido
-                                notifDiv.querySelector('.notification-title').textContent = notif.titulo;
-                                notifDiv.querySelector('.notification-message').textContent = notif.mensaje;
-                                notifDiv.querySelector('.notification-time').textContent = notif.tiempo_relativo;
-
-                                // Click handler
-                                notifDiv.addEventListener('click', function() {
-                                    marcarComoLeida(notif.id, notif.url);
-                                });
-
-                                return template;
-                            }
-
-                            // Obtener icono según tipo de notificación
-                            function getIconoNotificacion(tipo) {
-                                const iconos = {
-                                    'solicitud_aceptada': '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-                                    'solicitud_rechazada': '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-                                    'invitacion_proyecto': '<svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
-                                    'nueva_solicitud': '<svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>',
-                                    'cambio_rol': '<svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>',
-                                    'default': '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-                                };
-                                
-                                return iconos[tipo] || iconos['default'];
-                            }
-
-                            // Actualizar badge
-                            function actualizarBadge(cantidad) {
-                                if (cantidad > 0) {
-                                    notificationBadge.textContent = cantidad > 99 ? '99+' : cantidad;
-                                    notificationBadge.classList.remove('hidden');
-                                } else {
-                                    notificationBadge.classList.add('hidden');
-                                }
-                            }
-
-                            // Marcar como leída
-                            function marcarComoLeida(notifId, url) {
-                                fetch(`/notificaciones/marcar-leida/${notifId}/`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRFToken': getCookie('csrftoken'),
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success && url) {
-                                        window.location.href = url;
-                                    } else if (data.success) {
-                                        cargarNotificaciones();
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error marcando como leída:', error);
-                                });
-                            }
-
-                            // Marcar todas como leídas
-                            function marcarTodasComoLeidas() {
-                                fetch('/notificaciones/marcar-todas-leidas/', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRFToken': getCookie('csrftoken'),
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        cargarNotificaciones();
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error marcando todas como leídas:', error);
-                                });
-                            }
-
-                            // Obtener CSRF token
-                            function getCookie(name) {
-                                let cookieValue = null;
-                                if (document.cookie && document.cookie !== '') {
-                                    const cookies = document.cookie.split(';');
-                                    for (let i = 0; i < cookies.length; i++) {
-                                        const cookie = cookies[i].trim();
-                                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                                            break;
-                                        }
-                                    }
-                                }
-                                return cookieValue;
-                            }
-
-                            // Polling para actualizar notificaciones cada 30 segundos
-                            setInterval(function() {
-                                fetch('/notificaciones/contar/', {
-                                    method: 'GET',
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    actualizarBadge(data.no_leidas);
-                                })
-                                .catch(error => {
-                                    console.error('Error en polling de notificaciones:', error);
-                                });
-                            }, 30000);
-
-                            // Cargar contador inicial
-                            if (notificationBadge) {
-                                fetch('/notificaciones/contar/', {
-                                    method: 'GET',
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    actualizarBadge(data.no_leidas);
-                                });
-                            }
-                        });
-                        </script>
                             {% if user.is_authenticated %}
                                 <div class="flex items-center space-x-3">
                                     <span class="hidden sm:block text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -672,267 +757,481 @@
                                             </div>
                                         </div>
                                     </div>
-                                {% else %}
-                                    <div class="flex items-center space-x-3">
-                                        <a href="{% url 'login' %}" class="px-4 py-2 text-primary dark:text-primary-neon font-medium hover:bg-primary hover:bg-opacity-10 rounded-lg transition-all duration-300">
-                                            Iniciar Sesión
-                                        </a>
-                                        <a href="{% url 'register' %}" class="btn-primary px-4 py-2 rounded-lg text-white font-medium hover:shadow-lg transition-all duration-300">
-                                            Registrarse
-                                        </a>
-                                    </div>
-                                {% endif %}
-                            </div>
+                                </div>
+                            {% else %}
+                                <div class="flex items-center space-x-3">
+                                    <a href="{% url 'login' %}" class="px-4 py-2 text-primary dark:text-primary-neon font-medium hover:bg-primary hover:bg-opacity-10 rounded-lg transition-all duration-300">
+                                        Iniciar Sesión
+                                    </a>
+                                    <a href="{% url 'register' %}" class="btn-primary px-4 py-2 rounded-lg text-white font-medium hover:shadow-lg transition-all duration-300">
+                                        Registrarse
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-                </header>
-                
-                <main id="mainContent" class="flex-1 p-6 bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-                    <!-- SISTEMA DE MENSAJES DE DJANGO -->
-                    {% if messages %}
-                        <div class="mb-6 space-y-3" id="messagesContainer">
-                            {% for message in messages %}
-                                <div class="message-alert rounded-lg p-4 flex items-start space-x-3 shadow-lg
+                </div>
+            </header>
+            
+            <main id="mainContent" class="flex-1 p-6 bg-gray-50 dark:bg-gray-900 transition-all duration-300">
+                <!-- SISTEMA DE MENSAJES DE DJANGO -->
+                {% if messages %}
+                    <div class="mb-6 space-y-3" id="messagesContainer">
+                        {% for message in messages %}
+                            <div class="message-alert rounded-lg p-4 flex items-start space-x-3 shadow-lg
+                                {% if message.tags == 'error' or message.tags == 'danger' %}
+                                    bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border border-red-200 dark:border-red-800
+                                {% elif message.tags == 'success' %}
+                                    bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border border-green-200 dark:border-green-800
+                                {% elif message.tags == 'warning' %}
+                                    bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 border border-yellow-200 dark:border-yellow-800
+                                {% else %}
+                                    bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border border-blue-200 dark:border-blue-800
+                                {% endif %}"
+                                data-message-id="{{ forloop.counter }}">
+                                
+                                <!-- Icono -->
+                                <div class="flex-shrink-0">
                                     {% if message.tags == 'error' or message.tags == 'danger' %}
-                                        bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border border-red-200 dark:border-red-800
-                                    {% elif message.tags == 'success' %}
-                                        bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border border-green-200 dark:border-green-800
-                                    {% elif message.tags == 'warning' %}
-                                        bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 border border-yellow-200 dark:border-yellow-800
-                                    {% else %}
-                                        bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border border-blue-200 dark:border-blue-800
-                                    {% endif %}"
-                                    data-message-id="{{ forloop.counter }}">
-                                    
-                                    <!-- Icono -->
-                                    <div class="flex-shrink-0">
-                                        {% if message.tags == 'error' or message.tags == 'danger' %}
-                                            <svg class="w-6 h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        {% elif message.tags == 'success' %}
-                                            <svg class="w-6 h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        {% elif message.tags == 'warning' %}
-                                            <svg class="w-6 h-6 text-yellow-500 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                            </svg>
-                                        {% else %}
-                                            <svg class="w-6 h-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Mensaje -->
-                                    <div class="flex-1 text-sm font-medium
-                                        {% if message.tags == 'error' or message.tags == 'danger' %}
-                                            text-red-800 dark:text-red-200
-                                        {% elif message.tags == 'success' %}
-                                            text-green-800 dark:text-green-200
-                                        {% elif message.tags == 'warning' %}
-                                            text-yellow-800 dark:text-yellow-200
-                                        {% else %}
-                                            text-blue-800 dark:text-blue-200
-                                        {% endif %}">
-                                        {{ message }}
-                                    </div>
-                                    
-                                    <!-- Botón cerrar -->
-                                    <button onclick="closeMessage(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        <svg class="w-6 h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
-                                    </button>
+                                    {% elif message.tags == 'success' %}
+                                        <svg class="w-6 h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    {% elif message.tags == 'warning' %}
+                                        <svg class="w-6 h-6 text-yellow-500 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-6 h-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    {% endif %}
                                 </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    
-                    {% block content %}{% endblock %}
-                </main>
-            </div>
+                                
+                                <!-- Mensaje -->
+                                <div class="flex-1 text-sm font-medium
+                                    {% if message.tags == 'error' or message.tags == 'danger' %}
+                                        text-red-800 dark:text-red-200
+                                    {% elif message.tags == 'success' %}
+                                        text-green-800 dark:text-green-200
+                                    {% elif message.tags == 'warning' %}
+                                        text-yellow-800 dark:text-yellow-200
+                                    {% else %}
+                                        text-blue-800 dark:text-blue-200
+                                    {% endif %}">
+                                    {{ message }}
+                                </div>
+                                
+                                <!-- Botón cerrar -->
+                                <button onclick="closeMessage(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
         </div>
-        {% endblock body_content %}
+    </div>
+    {% endblock body_content %}
 
-        <script>
-            // Función para cerrar mensajes
-            function closeMessage(button) {
-                const messageElement = button.closest('.message-alert');
-                messageElement.classList.add('fade-out');
+    {% block extra_js %}
+    <script>
+        // Función para cerrar mensajes
+        function closeMessage(button) {
+            const messageElement = button.closest('.message-alert');
+            messageElement.classList.add('fade-out');
+            setTimeout(() => {
+                messageElement.remove();
+            }, 300);
+        }
+
+        // Auto-cerrar mensajes después de 5 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message-alert');
+            messages.forEach(message => {
                 setTimeout(() => {
-                    messageElement.remove();
-                }, 300);
-            }
-
-            // Auto-cerrar mensajes después de 5 segundos (opcional)
-            document.addEventListener('DOMContentLoaded', function() {
-                const messages = document.querySelectorAll('.message-alert');
-                messages.forEach(message => {
-                    setTimeout(() => {
-                        const closeButton = message.querySelector('button');
-                        if (closeButton && message.parentElement) {
-                            closeMessage(closeButton);
-                        }
-                    }, 5000); // 5 segundos
-                });
+                    const closeButton = message.querySelector('button');
+                    if (closeButton && message.parentElement) {
+                        closeMessage(closeButton);
+                    }
+                }, 5000);
             });
+        });
 
-            // Resto del código JavaScript existente
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            const menuToggle = document.getElementById('menuToggle');
-            const closeSidebar = document.getElementById('closeSidebar');
-            const collapseSidebar = document.getElementById('collapseSidebar');
-            const showSidebar = document.getElementById('showSidebar');
-            const mainContent = document.getElementById('mainContent');
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const userMenuButton = document.getElementById('userMenuButton');
-            const userDropdown = document.getElementById('userDropdown');
+        // Código del sidebar y navegación
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const menuToggle = document.getElementById('menuToggle');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const collapseSidebar = document.getElementById('collapseSidebar');
+        const showSidebar = document.getElementById('showSidebar');
+        const mainContent = document.getElementById('mainContent');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+        
+        let isHidden = false;
+        let isMobile = window.innerWidth < 1024;
+        
+        function openSidebar() {
+            if (isMobile) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeSidebarFunc() {
+            if (isMobile) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function toggleSidebarVisibility() {
+            if (isMobile) return;
             
-            let isHidden = false;
-            let isMobile = window.innerWidth < 1024;
+            isHidden = !isHidden;
             
-            function openSidebar() {
-                if (isMobile) {
-                    sidebar.classList.remove('-translate-x-full');
-                    overlay.classList.remove('hidden');
-                    document.body.style.overflow = 'hidden';
-                }
+            if (isHidden) {
+                sidebar.classList.add('sidebar-hidden');
+                mainContent.parentElement.classList.add('main-fullwidth');
+                showSidebar.classList.remove('opacity-0', 'pointer-events-none');
+                showSidebar.classList.add('opacity-100', 'pointer-events-auto');
+            } else {
+                sidebar.classList.remove('sidebar-hidden');
+                mainContent.parentElement.classList.remove('main-fullwidth');
+                showSidebar.classList.add('opacity-0', 'pointer-events-none');
+                showSidebar.classList.remove('opacity-100', 'pointer-events-auto');
             }
             
-            function closeSidebarFunc() {
-                if (isMobile) {
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.classList.add('hidden');
-                    document.body.style.overflow = '';
-                }
+            if (!isMobile) {
+                localStorage.setItem('sidebarHidden', isHidden);
             }
-            
-            function toggleSidebarVisibility() {
-                if (isMobile) return;
-                
-                isHidden = !isHidden;
-                
-                if (isHidden) {
-                    sidebar.classList.add('sidebar-hidden');
-                    mainContent.parentElement.classList.add('main-fullwidth');
-                    showSidebar.classList.remove('opacity-0', 'pointer-events-none');
-                    showSidebar.classList.add('opacity-100', 'pointer-events-auto');
-                } else {
-                    sidebar.classList.remove('sidebar-hidden');
-                    mainContent.parentElement.classList.remove('main-fullwidth');
-                    showSidebar.classList.add('opacity-0', 'pointer-events-none');
-                    showSidebar.classList.remove('opacity-100', 'pointer-events-auto');
-                }
-                
-                if (!isMobile) {
-                    localStorage.setItem('sidebarHidden', isHidden);
-                }
+        }
+        
+        function initDarkMode() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
             }
-            
-            function initDarkMode() {
-                const isDark = localStorage.getItem('darkMode') === 'true';
-                if (isDark) {
-                    document.documentElement.classList.add('dark');
-                }
+        }
+        
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
             }
-            
-            function toggleDarkMode() {
-                const isDark = document.documentElement.classList.contains('dark');
-                if (isDark) {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'false');
-                } else {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('darkMode', 'true');
-                }
+        }
+        
+        function toggleUserDropdown() {
+            if (userDropdown) {
+                userDropdown.classList.toggle('hidden');
             }
-            
-            function toggleUserDropdown() {
-                if (userDropdown) {
-                    userDropdown.classList.toggle('hidden');
-                }
+        }
+        
+        menuToggle?.addEventListener('click', openSidebar);
+        closeSidebar?.addEventListener('click', closeSidebarFunc);
+        overlay?.addEventListener('click', closeSidebarFunc);
+        collapseSidebar?.addEventListener('click', toggleSidebarVisibility);
+        showSidebar?.addEventListener('click', toggleSidebarVisibility);
+        darkModeToggle?.addEventListener('click', toggleDarkMode);
+        userMenuButton?.addEventListener('click', toggleUserDropdown);
+        
+        document.addEventListener('click', function(e) {
+            if (userMenuButton && userDropdown && 
+                !userMenuButton.contains(e.target) && 
+                !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
             }
-            
-            menuToggle?.addEventListener('click', openSidebar);
-            closeSidebar?.addEventListener('click', closeSidebarFunc);
-            overlay?.addEventListener('click', closeSidebarFunc);
-            collapseSidebar?.addEventListener('click', toggleSidebarVisibility);
-            showSidebar?.addEventListener('click', toggleSidebarVisibility);
-            darkModeToggle?.addEventListener('click', toggleDarkMode);
-            userMenuButton?.addEventListener('click', toggleUserDropdown);
-            
-            document.addEventListener('click', function(e) {
-                if (userMenuButton && userDropdown && 
-                    !userMenuButton.contains(e.target) && 
-                    !userDropdown.contains(e.target)) {
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (isMobile && !sidebar.classList.contains('-translate-x-full')) {
+                    closeSidebarFunc();
+                }
+                if (userDropdown && !userDropdown.classList.contains('hidden')) {
                     userDropdown.classList.add('hidden');
                 }
-            });
+            }
+        });
+        
+        function handleResize() {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth < 1024;
             
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    if (isMobile && !sidebar.classList.contains('-translate-x-full')) {
-                        closeSidebarFunc();
-                    }
-                    if (userDropdown && !userDropdown.classList.contains('hidden')) {
-                        userDropdown.classList.add('hidden');
-                    }
-                }
-            });
-            
-            function handleResize() {
-                const wasMobile = isMobile;
-                isMobile = window.innerWidth < 1024;
-                
-                if (wasMobile && !isMobile) {
-                    closeSidebarFunc();
-                    const savedState = localStorage.getItem('sidebarHidden');
-                    if (savedState === 'true') {
-                        isHidden = false;
-                        toggleSidebarVisibility();
-                    } else {
-                        sidebar.classList.remove('-translate-x-full', 'sidebar-hidden');
-                        mainContent.parentElement.classList.remove('main-fullwidth');
-                        showSidebar.classList.add('opacity-0', 'pointer-events-none');
-                    }
-                } else if (!wasMobile && isMobile) {
-                    sidebar.classList.remove('sidebar-hidden');
+            if (wasMobile && !isMobile) {
+                closeSidebarFunc();
+                const savedState = localStorage.getItem('sidebarHidden');
+                if (savedState === 'true') {
+                    isHidden = false;
+                    toggleSidebarVisibility();
+                } else {
+                    sidebar.classList.remove('-translate-x-full', 'sidebar-hidden');
                     mainContent.parentElement.classList.remove('main-fullwidth');
                     showSidebar.classList.add('opacity-0', 'pointer-events-none');
-                    sidebar.classList.add('-translate-x-full');
-                    isHidden = false;
+                }
+            } else if (!wasMobile && isMobile) {
+                sidebar.classList.remove('sidebar-hidden');
+                mainContent.parentElement.classList.remove('main-fullwidth');
+                showSidebar.classList.add('opacity-0', 'pointer-events-none');
+                sidebar.classList.add('-translate-x-full');
+                isHidden = false;
+            }
+        }
+        
+        function loadState() {
+            if (!isMobile) {
+                const saved = localStorage.getItem('sidebarHidden');
+                if (saved === 'true') {
+                    setTimeout(() => {
+                        toggleSidebarVisibility();
+                    }, 100);
                 }
             }
+        }
+        
+        window.addEventListener('resize', handleResize);
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            handleResize();
+            loadState();
+            initDarkMode();
             
-            function loadState() {
-                if (!isMobile) {
-                    const saved = localStorage.getItem('sidebarHidden');
-                    if (saved === 'true') {
-                        setTimeout(() => {
-                            toggleSidebarVisibility();
-                        }, 100);
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 0.3s ease';
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+
+        // Sistema de notificaciones
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsButton = document.getElementById('notificationsButton');
+            const notificationsDropdown = document.getElementById('notificationsDropdown');
+            const notificationBadge = document.getElementById('notificationBadge');
+            const notificationsList = document.getElementById('notificationsList');
+            const noNotifications = document.getElementById('noNotifications');
+            const markAllAsReadBtn = document.getElementById('markAllAsRead');
+            const notificationTemplate = document.getElementById('notificationTemplate');
+
+            // Toggle dropdown
+            notificationsButton?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notificationsDropdown.classList.toggle('hidden');
+                
+                if (!notificationsDropdown.classList.contains('hidden')) {
+                    cargarNotificaciones();
+                }
+            });
+
+            // Cerrar al hacer click fuera
+            document.addEventListener('click', function(e) {
+                if (notificationsDropdown && 
+                    !notificationsDropdown.contains(e.target) && 
+                    !notificationsButton.contains(e.target)) {
+                    notificationsDropdown.classList.add('hidden');
+                }
+            });
+
+            // Cerrar con ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !notificationsDropdown.classList.contains('hidden')) {
+                    notificationsDropdown.classList.add('hidden');
+                }
+            });
+
+            // Marcar todas como leídas
+            markAllAsReadBtn?.addEventListener('click', function() {
+                marcarTodasComoLeidas();
+            });
+
+            function cargarNotificaciones() {
+                fetch('/notificaciones/obtener/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    actualizarListaNotificaciones(data.notificaciones);
+                    actualizarBadge(data.no_leidas);
+                })
+                .catch(error => {
+                    console.error('Error cargando notificaciones:', error);
+                });
+            }
+
+            function actualizarListaNotificaciones(notificaciones) {
+                const items = notificationsList.querySelectorAll('.notification-item');
+                items.forEach(item => item.remove());
+
+                if (notificaciones.length === 0) {
+                    noNotifications.classList.remove('hidden');
+                    return;
+                }
+
+                noNotifications.classList.add('hidden');
+
+                notificaciones.forEach(notif => {
+                    const notifElement = crearElementoNotificacion(notif);
+                    notificationsList.insertBefore(notifElement, noNotifications);
+                });
+            }
+
+            function crearElementoNotificacion(notif) {
+                const template = notificationTemplate.content.cloneNode(true);
+                const notifDiv = template.querySelector('.notification-item');
+                
+                notifDiv.dataset.notificationId = notif.id;
+                
+                if (notif.leida) {
+                    notifDiv.classList.add('border-transparent', 'opacity-75');
+                    const dot = notifDiv.querySelector('.notification-unread-dot');
+                    dot.classList.add('hidden');
+                } else {
+                    notifDiv.classList.add('border-primary', 'dark:border-primary-neon', 'unread');
+                }
+
+                const iconContainer = notifDiv.querySelector('.notification-icon');
+                const iconHTML = getIconoNotificacion(notif.tipo);
+                iconContainer.innerHTML = iconHTML;
+
+                notifDiv.querySelector('.notification-title').textContent = notif.titulo;
+                notifDiv.querySelector('.notification-message').textContent = notif.mensaje;
+                notifDiv.querySelector('.notification-time').textContent = notif.tiempo_relativo;
+
+                notifDiv.addEventListener('click', function() {
+                    marcarComoLeida(notif.id, notif.url);
+                });
+
+                return notifDiv;
+            }
+
+            function getIconoNotificacion(tipo) {
+                const iconos = {
+                    'solicitud_aceptada': '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                    'solicitud_rechazada': '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                    'invitacion_proyecto': '<svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
+                    'nueva_solicitud': '<svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>',
+                    'cambio_rol': '<svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>',
+                    'default': '<svg class="w-6 h-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                };
+                
+                return iconos[tipo] || iconos['default'];
+            }
+
+            function actualizarBadge(cantidad) {
+                if (cantidad > 0) {
+                    notificationBadge.textContent = cantidad > 99 ? '99+' : cantidad;
+                    notificationBadge.classList.remove('hidden');
+                } else {
+                    notificationBadge.classList.add('hidden');
+                }
+            }
+
+            function marcarComoLeida(notifId, url) {
+                fetch(`/notificaciones/marcar-leida/${notifId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && url) {
+                        window.location.href = url;
+                    } else if (data.success) {
+                        cargarNotificaciones();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marcando como leída:', error);
+                });
+            }
+
+            function marcarTodasComoLeidas() {
+                fetch('/notificaciones/marcar-todas-leidas/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        cargarNotificaciones();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marcando todas como leídas:', error);
+                });
+            }
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
                 }
+                return cookieValue;
             }
-            
-            window.addEventListener('resize', handleResize);
-            
-            document.addEventListener('DOMContentLoaded', function() {
-                handleResize();
-                loadState();
-                initDarkMode();
-                
-                document.body.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.style.transition = 'opacity 0.3s ease';
-                    document.body.style.opacity = '1';
-                }, 100);
-            });
-        </script>
 
-        {% block extra_js %}{% endblock %}
-    </body>
+            // Polling cada 30 segundos
+            setInterval(function() {
+                fetch('/notificaciones/contar/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    actualizarBadge(data.no_leidas);
+                })
+                .catch(error => {
+                    console.error('Error en polling:', error);
+                });
+            }, 30000);
+
+            // Cargar contador inicial
+            if (notificationBadge) {
+                fetch('/notificaciones/contar/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    actualizarBadge(data.no_leidas);
+                });
+            }
+        });
+    </script>
+    {% endblock extra_js %}
+</body>
 </html>

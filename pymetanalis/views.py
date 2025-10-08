@@ -10,9 +10,11 @@ from django.conf import settings
 from django.urls import reverse
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
-from .models import Proyecto, UsuarioProyecto, SolicitudProyecto,Notificacion
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from .models import Proyecto, UsuarioProyecto, SolicitudProyecto, Notificacion, Invitacion
 import json
-
+import datetime
 
 # ==================== GESTIÓN DE PROYECTOS ====================
 
@@ -83,7 +85,6 @@ def crear_proyecto(request):
         'categorias': Proyecto.CATEGORIA_CHOICES
     })
 
-
 @login_required
 def mis_proyectos(request):
     """Vista para listar los proyectos del usuario"""
@@ -149,7 +150,6 @@ def mis_proyectos(request):
     
     return render(request, 'mis_proyectos.html', context)
 
-
 @login_required
 def detalle_proyecto(request, proyecto_id):
     """Vista para ver los detalles de un proyecto"""
@@ -203,7 +203,6 @@ def detalle_proyecto(request, proyecto_id):
     
     return render(request, 'detalle_proyecto.html', context)
 
-
 @login_required
 def buscar_proyectos(request):
     """Vista para buscar proyectos públicos"""
@@ -254,7 +253,6 @@ def buscar_proyectos(request):
     
     return render(request, 'buscar_proyectos.html', context)
 
-
 @login_required
 def editar_proyecto(request, proyecto_id):
     """Vista para editar un proyecto (solo dueños)"""
@@ -299,6 +297,265 @@ def editar_proyecto(request, proyecto_id):
         'categorias': Proyecto.CATEGORIA_CHOICES,
         'estados': Proyecto.ESTADO_CHOICES,
     })
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
+from .models import Proyecto, UsuarioProyecto, Invitacion
+from django.contrib.auth.models import User
+from django.utils.crypto import get_random_string
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def invitar_usuario(request, proyecto_id):
+    """Vista para invitar usuarios al proyecto"""
+    
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    # Verificar permisos
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=proyecto,
+        puede_invitar=True
+    ).first()
+    
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'profile') and 
+        request.user.profile.role and 
+        request.user.profile.role.name == 'administrador'
+    )
+    
+    if not usuario_proyecto and not es_admin:
+        messages.error(request, 'No tienes permisos para invitar usuarios a este proyecto.')
+        return redirect('detalle_proyecto', proyecto_id=proyecto_id)
+    
+    if request.method == 'POST':
+        logger.debug(f"POST recibido: metodo={request.POST.get('metodo')}")
+        metodo = request.POST.get('metodo')  # 'usuario' o 'email'
+        
+        if metodo == 'usuario':
+            usuario_id = request.POST.get('usuario_id', '').strip()
+            
+            if not usuario_id:
+                messages.error(request, 'Debes seleccionar un usuario.')
+                return render(request, 'invitar_usuario.html', {
+                    'proyecto': proyecto,
+                    'tab_activo': 'usuario'
+                })
+            
+            try:
+                usuario_invitado = get_object_or_404(User, id=usuario_id)
+                
+                if UsuarioProyecto.objects.filter(usuario=usuario_invitado, proyecto=proyecto).exists():
+                    messages.error(request, 'Este usuario ya es miembro del proyecto.')
+                else:
+                    UsuarioProyecto.objects.create(
+                        usuario=usuario_invitado,
+                        proyecto=proyecto,
+                        rol_proyecto='COLABORADOR',
+                        puede_invitar=False
+                    )
+                    logger.debug(f"Usuario agregado: {usuario_invitado.username}")
+                    messages.success(request, f'Usuario {usuario_invitado.get_full_name() or usuario_invitado.username} agregado exitosamente.')
+                
+                return redirect('detalle_proyecto', proyecto_id=proyecto_id)
+                
+            except User.DoesNotExist:
+                logger.error("Usuario no encontrado")
+                messages.error(request, 'Usuario no encontrado.')
+                return render(request, 'invitar_usuario.html', {
+                    'proyecto': proyecto,
+                    'tab_activo': 'usuario'
+                })
+        
+        elif metodo == 'email':
+            destinatario_email = request.POST.get('destinatario_email', '').strip()
+            
+            logger.debug(f"Invitación por email: destinatario={destinatario_email}")
+            
+            if not destinatario_email:
+                messages.error(request, 'Debes proporcionar el correo del destinatario.')
+                return render(request, 'invitar_usuario.html', {
+                    'proyecto': proyecto,
+                    'tab_activo': 'email'
+                })
+            
+            # Validar dominios permitidos
+            dominios_permitidos = ['@gmail.com', '@unemi.edu.ec']
+            if not any(dominio in destinatario_email for dominio in dominios_permitidos):
+                messages.error(request, 'Solo se permiten correos Gmail o @unemi.edu.ec')
+                return render(request, 'invitar_usuario.html', {
+                    'proyecto': proyecto,
+                    'tab_activo': 'email'
+                })
+            
+            try:
+                # Verificar si ya existe una invitación pendiente para este email
+                invitacion_existente = Invitacion.objects.filter(
+                    proyecto=proyecto,
+                    email_destino=destinatario_email,
+                    aceptado=False
+                ).first()
+                
+                if invitacion_existente:
+                    invitacion = invitacion_existente
+                    logger.debug(f"Reutilizando invitación existente: {invitacion.token}")
+                else:
+                    token = get_random_string(length=32)
+                    invitacion = Invitacion.objects.create(
+                        proyecto=proyecto,
+                        email_destino=destinatario_email,
+                        token=token,
+                        creado_por=request.user
+                    )
+                    logger.debug(f"Invitación creada: proyecto={proyecto.nombre}, email={destinatario_email}, token={token}")
+                
+                # Generar el enlace completo de invitación
+                enlace_invitacion = request.build_absolute_uri(
+                    reverse('aceptar_invitacion', args=[invitacion.token])
+                )
+                
+                # Preparar datos para el template
+                context = {
+                    'proyecto': proyecto,
+                    'invitacion': invitacion,
+                    'enlace_invitacion': enlace_invitacion,
+                    'destinatario_email': destinatario_email,
+                    'remitente_nombre': request.user.get_full_name() or request.user.username,
+                    'tab_activo': 'email'
+                }
+                
+                messages.success(request, f'Invitación generada para {destinatario_email}.')
+                return render(request, 'invitar_usuario.html', context)
+                
+            except Exception as e:
+                logger.error(f"Error al crear invitación: {str(e)}")
+                messages.error(request, f'Error al registrar la invitación: {str(e)}')
+                return render(request, 'invitar_usuario.html', {
+                    'proyecto': proyecto,
+                    'tab_activo': 'email'
+                })
+        
+        else:
+            logger.warning("Método de invitación no válido")
+            messages.error(request, 'Método de invitación no válido.')
+            return render(request, 'invitar_usuario.html', {
+                'proyecto': proyecto,
+                'tab_activo': 'usuario'
+            })
+    
+    # GET: Mostrar formulario
+    tab_activo = request.GET.get('tab', 'usuario')  # Por defecto, tab 'usuario'
+    if tab_activo == 'nueva_invitacion':
+        tab_activo = 'email'  # Forzar tab 'email' para nueva invitación
+    
+    return render(request, 'invitar_usuario.html', {
+        'proyecto': proyecto,
+        'tab_activo': tab_activo
+    })
+
+from django.contrib.auth import get_user_model
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from django.urls import reverse
+import datetime
+
+User = get_user_model()
+
+def aceptar_invitacion(request, token):
+    """Vista para aceptar una invitación mediante token"""
+    try:
+        invitacion = Invitacion.objects.get(token=token, aceptado=False)
+        
+        # CASO 1: Usuario NO autenticado
+        if not request.user.is_authenticated:
+            # Verificar si existe una cuenta con ese email
+            try:
+                usuario_existente = User.objects.get(email__iexact=invitacion.email_destino)
+                # Tiene cuenta pero no ha iniciado sesión
+                request.session['invitacion_token'] = token
+                messages.info(
+                    request, 
+                    f'Por favor, inicia sesión con tu cuenta ({invitacion.email_destino}) para aceptar la invitación.'
+                )
+                return redirect(f'/accounts/login/?next=/invitacion/aceptar/{token}/')
+                
+            except User.DoesNotExist:
+                # NO tiene cuenta - debe registrarse
+                request.session['invitacion_token'] = token
+                request.session['invitacion_email'] = invitacion.email_destino
+                messages.info(
+                    request,
+                    f'Esta invitación es para {invitacion.email_destino}. '
+                    f'Por favor, crea una cuenta con ese email para continuar.'
+                )
+                return redirect(f'/usuarios/register/?email={invitacion.email_destino}&token={token}')
+        
+        # CASO 2: Usuario autenticado
+        # Verificar que el email coincida
+        if request.user.email.lower() != invitacion.email_destino.lower():
+            messages.error(
+                request, 
+                f'Esta invitación fue enviada a {invitacion.email_destino}. '
+                f'Tu cuenta está registrada con {request.user.email}. '
+                f'Por favor, inicia sesión con la cuenta correcta.'
+            )
+            return redirect('core:home')
+        
+        # Verificar si ya es miembro
+        if UsuarioProyecto.objects.filter(usuario=request.user, proyecto=invitacion.proyecto).exists():
+            messages.warning(request, 'Ya eres miembro de este proyecto.')
+            return redirect('detalle_proyecto', proyecto_id=invitacion.proyecto.id)
+        
+        # Agregar al usuario al proyecto
+        UsuarioProyecto.objects.create(
+            usuario=request.user,
+            proyecto=invitacion.proyecto,
+            rol_proyecto='COLABORADOR',
+            puede_invitar=False
+        )
+        
+        # Marcar la invitación como aceptada
+        invitacion.aceptado = True
+        invitacion.fecha_aceptacion = datetime.datetime.now()
+        invitacion.save()
+        
+        # Crear notificaciones
+        from .views import crear_notificacion
+        
+        crear_notificacion(
+            usuario=request.user,
+            tipo='invitacion_proyecto',
+            titulo=f'Te uniste al proyecto: {invitacion.proyecto.nombre}',
+            mensaje=f'Has sido agregado exitosamente al proyecto "{invitacion.proyecto.nombre}" como colaborador.',
+            url=reverse('detalle_proyecto', args=[invitacion.proyecto.id]),
+            proyecto=invitacion.proyecto
+        )
+        
+        crear_notificacion(
+            usuario=invitacion.creado_por,
+            tipo='general',
+            titulo=f'Invitación aceptada - {invitacion.proyecto.nombre}',
+            mensaje=f'{request.user.get_full_name() or request.user.username} ha aceptado tu invitación y se unió al proyecto.',
+            url=reverse('detalle_proyecto', args=[invitacion.proyecto.id]),
+            proyecto=invitacion.proyecto
+        )
+        
+        messages.success(request, f'¡Bienvenido al proyecto "{invitacion.proyecto.nombre}"!')
+        logger.info(f"Usuario {request.user.username} aceptó invitación para proyecto {invitacion.proyecto.nombre}")
+        
+        return redirect('detalle_proyecto', proyecto_id=invitacion.proyecto.id)
+        
+    except Invitacion.DoesNotExist:
+        messages.error(request, 'Esta invitación es inválida o ya ha sido utilizada.')
+        logger.warning(f"Intento de acceso con token inválido: {token}")
+        return redirect('core:home')
+
 # ==================== SOLICITUDES Y MIEMBROS ====================
 
 @login_required
@@ -343,7 +600,7 @@ def solicitar_unirse_proyecto(request, proyecto_id):
             solicitud = SolicitudProyecto.objects.create(
                 usuario=request.user,
                 proyecto=proyecto,
-                tipo_solicitud='UNIRSE',  # ← AGREGUÉ ESTO (faltaba en tu código)
+                tipo_solicitud='UNIRSE',
                 mensaje=mensaje,
                 estado='PENDIENTE'
             )
@@ -366,7 +623,7 @@ def solicitar_unirse_proyecto(request, proyecto_id):
                     solicitud=solicitud
                 )
                 
-                # Enviar email (tu código existente)
+                # Enviar email
                 if dueno.email:
                     asunto = f'Nueva solicitud para "{proyecto.nombre}"'
                     mensaje_email = f"""Hola {dueno.get_full_name() or dueno.username},
@@ -438,7 +695,7 @@ def gestionar_solicitud(request, solicitud_id):
         
         with transaction.atomic():
             if accion == 'aceptar':
-                # Verificar nuevamente que no sea miembro (por si acaso)
+                # Verificar nuevamente que no sea miembro
                 if UsuarioProyecto.objects.filter(
                     usuario=solicitud.usuario,
                     proyecto=solicitud.proyecto
@@ -458,7 +715,6 @@ def gestionar_solicitud(request, solicitud_id):
                 
                 solicitud.estado = 'APROBADA'
                 solicitud.respondido_por = request.user
-                from django.utils import timezone
                 solicitud.fecha_respuesta = timezone.now()
                 solicitud.save()
                 
@@ -500,7 +756,6 @@ Equipo de Metaanálisis
             else:  # rechazar
                 solicitud.estado = 'RECHAZADA'
                 solicitud.respondido_por = request.user
-                from django.utils import timezone
                 solicitud.fecha_respuesta = timezone.now()
                 solicitud.save()
                 
@@ -550,226 +805,70 @@ Equipo de Metaanálisis
         }, status=500)
 
 @login_required
-def invitar_usuario(request, proyecto_id):
-    """Vista para invitar usuarios al proyecto"""
-    
-    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
-    
-    # Verificar permisos
-    usuario_proyecto = UsuarioProyecto.objects.filter(
-        usuario=request.user,
-        proyecto=proyecto,
-        puede_invitar=True
-    ).first()
-    
-    es_admin = request.user.is_superuser or (
-        hasattr(request.user, 'profile') and 
-        request.user.profile.role and 
-        request.user.profile.role.name == 'administrador'
-    )
-    
-    if not usuario_proyecto and not es_admin:
-        messages.error(request, 'No tienes permisos para invitar usuarios a este proyecto.')
-        return redirect('detalle_proyecto', proyecto_id=proyecto_id)
-    
-    if request.method == 'POST':
-        metodo = request.POST.get('metodo')  # 'email' o 'usuario'
-        
-        if metodo == 'usuario':
-            # Invitar por nombre de usuario
-            username = request.POST.get('username', '').strip()
-            
-            if not username:
-                messages.error(request, 'Debes proporcionar un nombre de usuario.')
-                return render(request, 'invitar_usuario.html', {'proyecto': proyecto})
-            
-            try:
-                usuario_invitado = User.objects.get(username=username)
-                
-                # Verificar que no sea ya miembro
-                if UsuarioProyecto.objects.filter(usuario=usuario_invitado, proyecto=proyecto).exists():
-                    messages.error(request, 'Este usuario ya es miembro del proyecto.')
-                else:
-                    with transaction.atomic():
-                        UsuarioProyecto.objects.create(
-                            usuario=usuario_invitado,
-                            proyecto=proyecto,
-                            rol_proyecto='COLABORADOR',
-                            puede_invitar=False
-                        )
-                        
-                        messages.success(request, f'{usuario_invitado.get_full_name() or usuario_invitado.username} ha sido agregado al proyecto.')
-                        
-                        # 🔔 CREAR NOTIFICACIÓN IN-APP
-                        crear_notificacion(
-                            usuario=usuario_invitado,
-                            tipo='invitacion_proyecto',
-                            titulo=f'Invitación a proyecto: {proyecto.nombre}',
-                            mensaje=f'{request.user.get_full_name() or request.user.username} te ha invitado a colaborar en el proyecto "{proyecto.nombre}".',
-                            url=reverse('detalle_proyecto', args=[proyecto.id]),
-                            proyecto=proyecto
-                        )
-                        
-                        # Enviar email
-                        if usuario_invitado.email:
-                            try:
-                                send_mail(
-                                    f'Invitación a proyecto: {proyecto.nombre}',
-                                    f"""Hola {usuario_invitado.get_full_name() or usuario_invitado.username},
-
-Has sido invitado a colaborar en el proyecto "{proyecto.nombre}" por {request.user.get_full_name() or request.user.username}.
-
-Accede al proyecto aquí:
-{request.build_absolute_uri(reverse('detalle_proyecto', args=[proyecto.id]))}
-
-Saludos,
-Equipo de Metaanálisis
-""",
-                                    settings.DEFAULT_FROM_EMAIL,
-                                    [usuario_invitado.email],
-                                    fail_silently=True,
-                                )
-                            except Exception as e:
-                                print(f"Error enviando email: {e}")
-                    
-                    return redirect('detalle_proyecto', proyecto_id=proyecto_id)
-                    
-            except User.DoesNotExist:
-                messages.error(request, 'Usuario no encontrado.')
-        
-        elif metodo == 'email':
-            # Invitar por email
-            email = request.POST.get('email', '').strip()
-            
-            if not email:
-                messages.error(request, 'Debes proporcionar un correo electrónico.')
-                return render(request, 'invitar_usuario.html', {'proyecto': proyecto})
-            
-            try:
-                # Buscar si el usuario existe
-                try:
-                    usuario_existente = User.objects.get(email=email)
-                    
-                    if UsuarioProyecto.objects.filter(usuario=usuario_existente, proyecto=proyecto).exists():
-                        messages.error(request, 'Este usuario ya es miembro del proyecto.')
-                    else:
-                        with transaction.atomic():
-                            # Agregar al proyecto
-                            UsuarioProyecto.objects.create(
-                                usuario=usuario_existente,
-                                proyecto=proyecto,
-                                rol_proyecto='COLABORADOR',
-                                puede_invitar=False
-                            )
-                            
-                            # 🔔 CREAR NOTIFICACIÓN IN-APP
-                            crear_notificacion(
-                                usuario=usuario_existente,
-                                tipo='invitacion_proyecto',
-                                titulo=f'Invitación a proyecto: {proyecto.nombre}',
-                                mensaje=f'{request.user.get_full_name() or request.user.username} te ha invitado a colaborar en el proyecto "{proyecto.nombre}".',
-                                url=reverse('detalle_proyecto', args=[proyecto.id]),
-                                proyecto=proyecto
-                            )
-                            
-                            # Enviar email
-                            send_mail(
-                                f'Invitación a proyecto: {proyecto.nombre}',
-                                f"""Hola {usuario_existente.get_full_name() or usuario_existente.username},
-
-Has sido invitado a colaborar en el proyecto "{proyecto.nombre}" por {request.user.get_full_name() or request.user.username}.
-
-Accede al proyecto aquí:
-{request.build_absolute_uri(reverse('detalle_proyecto', args=[proyecto.id]))}
-
-Saludos,
-Equipo de Metaanálisis
-""",
-                                settings.DEFAULT_FROM_EMAIL,
-                                [email],
-                                fail_silently=False,
-                            )
-                            
-                            messages.success(request, f'Usuario agregado al proyecto y notificado.')
-                
-                except User.DoesNotExist:
-                    # Usuario no existe, enviar invitación para registrarse
-                    send_mail(
-                        f'Invitación a proyecto: {proyecto.nombre}',
-                        f"""Hola,
-
-{request.user.get_full_name() or request.user.username} te ha invitado a colaborar en el proyecto "{proyecto.nombre}" en nuestra plataforma de metaanálisis.
-
-Para unirte, primero necesitas crear una cuenta:
-{request.build_absolute_uri(reverse('register'))}
-
-Después de registrarte, busca el proyecto "{proyecto.nombre}" en la plataforma para unirte.
-
-Saludos,
-Equipo de Metaanálisis
-""",
-                        settings.DEFAULT_FROM_EMAIL,
-                        [email],
-                        fail_silently=False,
-                    )
-                    
-                    messages.success(request, 'Invitación enviada por correo electrónico. El usuario deberá registrarse primero.')
-                
-                return redirect('detalle_proyecto', proyecto_id=proyecto_id)
-            
-            except Exception as e:
-                messages.error(request, f'Error al enviar la invitación: {str(e)}')
-        
-        else:
-            messages.error(request, 'Método de invitación no válido.')
-    
-    # GET: Mostrar formulario
-    return render(request, 'invitar_usuario.html', {
-        'proyecto': proyecto
-    })
-
-
-
-# ==================== SISTEMA DE NOTIFICACIONES ====================
-
-@login_required
-def obtener_notificaciones(request):
-    """Vista para obtener las notificaciones del usuario (AJAX)"""
+def buscar_usuarios_disponibles(request, proyecto_id):
+    """Vista AJAX para buscar usuarios disponibles para invitar"""
     
     if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'error': 'Petición no válida'}, status=400)
     
     try:
-        # Obtener las últimas 10 notificaciones
-        notificaciones = Notificacion.objects.filter(
-            usuario=request.user
-        ).select_related('proyecto', 'solicitud')[:10]
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
         
-        from django.utils.timesince import timesince
+        # Verificar permisos
+        usuario_proyecto = UsuarioProyecto.objects.filter(
+            usuario=request.user,
+            proyecto=proyecto,
+            puede_invitar=True
+        ).first()
         
-        notificaciones_data = []
-        for notif in notificaciones:
-            notificaciones_data.append({
-                'id': notif.id,
-                'tipo': notif.tipo,
-                'titulo': notif.titulo,
-                'mensaje': notif.mensaje,
-                'leida': notif.leida,
-                'url': notif.url or '#',
-                'tiempo_relativo': f'hace {timesince(notif.fecha_creacion)}',
-                'fecha_creacion': notif.fecha_creacion.isoformat(),
+        es_admin = request.user.is_superuser or (
+            hasattr(request.user, 'profile') and 
+            request.user.profile.role and 
+            request.user.profile.role.name == 'administrador'
+        )
+        
+        if not usuario_proyecto and not es_admin:
+            return JsonResponse({'error': 'Sin permisos'}, status=403)
+        
+        # Obtener término de búsqueda
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({
+                'success': True,
+                'usuarios': []
             })
         
-        # Contar no leídas
-        no_leidas = Notificacion.objects.filter(
-            usuario=request.user,
-            leida=False
-        ).count()
+        # Obtener IDs de usuarios que ya son miembros
+        miembros_ids = UsuarioProyecto.objects.filter(
+            proyecto=proyecto
+        ).values_list('usuario_id', flat=True)
+        
+        # Buscar usuarios que NO sean miembros
+        usuarios = User.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query)
+        ).exclude(
+            id__in=miembros_ids
+        ).exclude(
+            id=request.user.id  # Excluir al usuario actual
+        )[:10]  # Limitar a 10 resultados
+        
+        usuarios_data = []
+        for usuario in usuarios:
+            usuarios_data.append({
+                'id': usuario.id,
+                'username': usuario.username,
+                'nombre_completo': usuario.get_full_name() or usuario.username,
+                'email': usuario.email,
+                'iniciales': (usuario.first_name[0] if usuario.first_name else usuario.username[0]).upper()
+            })
         
         return JsonResponse({
             'success': True,
-            'notificaciones': notificaciones_data,
-            'no_leidas': no_leidas
+            'usuarios': usuarios_data
         })
         
     except Exception as e:
@@ -778,122 +877,6 @@ def obtener_notificaciones(request):
             'error': str(e)
         }, status=500)
 
-
-@login_required
-def contar_notificaciones(request):
-    """Vista para contar notificaciones no leídas (AJAX - polling)"""
-    
-    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'error': 'Petición no válida'}, status=400)
-    
-    try:
-        no_leidas = Notificacion.objects.filter(
-            usuario=request.user,
-            leida=False
-        ).count()
-        
-        return JsonResponse({
-            'success': True,
-            'no_leidas': no_leidas
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-
-@login_required
-@require_POST
-def marcar_notificacion_leida(request, notificacion_id):
-    """Vista para marcar una notificación como leída (AJAX)"""
-    
-    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'error': 'Petición no válida'}, status=400)
-    
-    try:
-        notificacion = get_object_or_404(
-            Notificacion,
-            id=notificacion_id,
-            usuario=request.user
-        )
-        
-        notificacion.marcar_como_leida()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Notificación marcada como leída',
-            'url': notificacion.url
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-
-@login_required
-@require_POST
-def marcar_todas_notificaciones_leidas(request):
-    """Vista para marcar todas las notificaciones como leídas (AJAX)"""
-    
-    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'error': 'Petición no válida'}, status=400)
-    
-    try:
-        from django.utils import timezone
-        
-        actualizadas = Notificacion.objects.filter(
-            usuario=request.user,
-            leida=False
-        ).update(
-            leida=True,
-            fecha_lectura=timezone.now()
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'{actualizadas} notificaciones marcadas como leídas'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-
-# ==================== FUNCIÓN HELPER ====================
-
-def crear_notificacion(usuario, tipo, titulo, mensaje, url=None, proyecto=None, solicitud=None):
-    """
-    Función helper para crear notificaciones fácilmente desde cualquier vista
-    
-    Parámetros:
-        usuario: Usuario que recibirá la notificación
-        tipo: Tipo de notificación (debe coincidir con TIPO_CHOICES)
-        titulo: Título de la notificación
-        mensaje: Mensaje descriptivo
-        url: URL opcional para redirección
-        proyecto: Proyecto relacionado (opcional)
-        solicitud: Solicitud relacionada (opcional)
-    """
-    try:
-        Notificacion.objects.create(
-            usuario=usuario,
-            tipo=tipo,
-            titulo=titulo,
-            mensaje=mensaje,
-            url=url,
-            proyecto=proyecto,
-            solicitud=solicitud
-        )
-    except Exception as e:
-        # Log del error pero no fallar la operación principal
-        print(f"Error creando notificación: {e}")
-    
 @login_required
 @require_POST
 def cambiar_rol_miembro(request, proyecto_id, usuario_id):
@@ -971,7 +954,6 @@ def cambiar_rol_miembro(request, proyecto_id, usuario_id):
             'message': f'Error al cambiar el rol: {str(e)}'
         }, status=500)
 
-
 @login_required
 @require_POST
 def eliminar_miembro(request, proyecto_id, usuario_id):
@@ -1044,6 +1026,7 @@ def eliminar_miembro(request, proyecto_id, usuario_id):
             'success': False,
             'message': f'Error al eliminar el miembro: {str(e)}'
         }, status=500)
+
 @login_required
 @require_POST
 def abandonar_proyecto(request, proyecto_id):
@@ -1135,3 +1118,149 @@ Equipo de Metaanálisis
             'success': False,
             'message': f'Error al abandonar el proyecto: {str(e)}'
         }, status=500)
+
+# ==================== SISTEMA DE NOTIFICACIONES ====================
+
+@login_required
+def obtener_notificaciones(request):
+    """Vista para obtener las notificaciones del usuario (AJAX)"""
+    
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Petición no válida'}, status=400)
+    
+    try:
+        # Obtener las últimas 10 notificaciones
+        notificaciones = Notificacion.objects.filter(
+            usuario=request.user
+        ).select_related('proyecto', 'solicitud')[:10]
+        
+        from django.utils.timesince import timesince
+        
+        notificaciones_data = []
+        for notif in notificaciones:
+            notificaciones_data.append({
+                'id': notif.id,
+                'tipo': notif.tipo,
+                'titulo': notif.titulo,
+                'mensaje': notif.mensaje,
+                'leida': notif.leida,
+                'url': notif.url or '#',
+                'tiempo_relativo': f'hace {timesince(notif.fecha_creacion)}',
+                'fecha_creacion': notif.fecha_creacion.isoformat(),
+            })
+        
+        # Contar no leídas
+        no_leidas = Notificacion.objects.filter(
+            usuario=request.user,
+            leida=False
+        ).count()
+        
+        return JsonResponse({
+            'success': True,
+            'notificaciones': notificaciones_data,
+            'no_leidas': no_leidas
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def contar_notificaciones(request):
+    """Vista para contar notificaciones no leídas (AJAX - polling)"""
+    
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Petición no válida'}, status=400)
+    
+    try:
+        no_leidas = Notificacion.objects.filter(
+            usuario=request.user,
+            leida=False
+        ).count()
+        
+        return JsonResponse({
+            'success': True,
+            'no_leidas': no_leidas
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_POST
+def marcar_notificacion_leida(request, notificacion_id):
+    """Vista para marcar una notificación como leída (AJAX)"""
+    
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Petición no válida'}, status=400)
+    
+    try:
+        notificacion = get_object_or_404(
+            Notificacion,
+            id=notificacion_id,
+            usuario=request.user
+        )
+        
+        notificacion.marcar_como_leida()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Notificación marcada como leída',
+            'url': notificacion.url
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_POST
+def marcar_todas_notificaciones_leidas(request):
+    """Vista para marcar todas las notificaciones como leídas (AJAX)"""
+    
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Petición no válida'}, status=400)
+    
+    try:
+        actualizadas = Notificacion.objects.filter(
+            usuario=request.user,
+            leida=False
+        ).update(
+            leida=True,
+            fecha_lectura=timezone.now()
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{actualizadas} notificaciones marcadas como leídas'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+# ==================== FUNCIÓN HELPER ====================
+
+def crear_notificacion(usuario, tipo, titulo, mensaje, url=None, proyecto=None, solicitud=None):
+    try:
+        Notificacion.objects.create(
+            usuario=usuario,
+            tipo=tipo,
+            titulo=titulo,
+            mensaje=mensaje,
+            url=url,
+            proyecto=proyecto,
+            solicitud=solicitud
+        )
+    except Exception as e:
+        # Log del error pero no fallar la operación principal
+        print(f"Error creando notificación: {e}")
