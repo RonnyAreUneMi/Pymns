@@ -4,8 +4,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
+from django.http import HttpResponse, FileResponse
 import os
 import json
+import io
 
 from .models import Articulo, ArchivoSubida, HistorialArticulo
 from pymetanalis.models import Proyecto, UsuarioProyecto
@@ -32,6 +34,123 @@ def ver_articulos(request, proyecto_id):
     }
 
     return render(request, 'ver_articulos.html', context)
+
+
+@login_required
+def descargar_articulo(request, articulo_id):
+    """Vista para descargar el BibTeX de un artículo individual."""
+    articulo = get_object_or_404(Articulo, id=articulo_id)
+    
+    # Verificar que el usuario tiene acceso al proyecto
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=articulo.proyecto
+    ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes permiso para acceder a este artículo.')
+        return redirect('core:home')
+    
+    # Crear el contenido BibTeX
+    bibtex_content = articulo.bibtex_original
+    
+    # Crear respuesta HTTP con el archivo
+    response = HttpResponse(bibtex_content, content_type='application/x-bibtex')
+    nombre_archivo = f"{articulo.bibtex_key}.bib"
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    
+    # Registrar descarga en historial
+    HistorialArticulo.objects.create(
+        articulo=articulo,
+        usuario=request.user,
+        tipo_cambio='DESCARGA',
+        valor_nuevo=f'Archivo BibTeX descargado'
+    )
+    
+    return response
+
+
+@login_required
+def descargar_archivo_bib(request, archivo_nombre):
+    """Vista para descargar un archivo .bib completo con todos sus artículos."""
+    proyecto_id = request.GET.get('proyecto_id')
+    
+    if not proyecto_id:
+        messages.error(request, 'Proyecto no especificado.')
+        return redirect('core:home')
+    
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    # Verificar acceso
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=proyecto
+    ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes permiso para acceder a este proyecto.')
+        return redirect('core:home')
+    
+    # Obtener todos los artículos del archivo
+    articulos = Articulo.objects.filter(
+        proyecto=proyecto,
+        archivo_bib=archivo_nombre
+    ).order_by('bibtex_key')
+    
+    if not articulos.exists():
+        messages.error(request, 'No se encontraron artículos para este archivo.')
+        return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
+    
+    # Generar contenido BibTeX completo
+    bibtex_content = ""
+    for articulo in articulos:
+        bibtex_content += articulo.bibtex_original + "\n\n"
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(bibtex_content, content_type='application/x-bibtex')
+    response['Content-Disposition'] = f'attachment; filename="{archivo_nombre}"'
+    
+    return response
+
+
+@login_required
+def eliminar_articulo(request, articulo_id):
+    """Vista para eliminar un artículo."""
+    if request.method != 'POST':
+        messages.error(request, 'Método no permitido.')
+        return redirect('core:home')
+    
+    articulo = get_object_or_404(Articulo, id=articulo_id)
+    proyecto_id = articulo.proyecto.id
+
+    # Verificar que el usuario tiene acceso al proyecto
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=articulo.proyecto
+    ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes permiso para eliminar este artículo.')
+        return redirect('core:home')
+
+    # Guardar información antes de eliminar
+    titulo_articulo = articulo.titulo
+    bibtex_key = articulo.bibtex_key
+
+    # Registrar en historial antes de eliminar
+    HistorialArticulo.objects.create(
+        articulo=articulo,
+        usuario=request.user,
+        tipo_cambio='ELIMINACION',
+        valor_anterior=titulo_articulo,
+        valor_nuevo=f'Artículo eliminado por {request.user.get_full_name() or request.user.username}'
+    )
+
+    # Eliminar el artículo
+    articulo.delete()
+
+    messages.success(request, f'Artículo "{titulo_articulo}" eliminado correctamente.')
+    return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
 
 
 @login_required

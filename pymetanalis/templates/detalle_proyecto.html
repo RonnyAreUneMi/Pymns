@@ -251,8 +251,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                 </svg>
                             </div>
-                            <a href="{% url 'articulos:ver_articulos' proyecto.id %}" 
-                                class="text-left block">
+                            <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="block text-left p-3 rounded-lg">
                                 <h3 class="font-semibold text-gray-900 dark:text-white">Ver Artículos</h3>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Gestionar base</p>
                             </a>
@@ -482,6 +481,9 @@
     </div>
 </div>
 
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 // Obtener el token CSRF
 function getCookie(name) {
@@ -598,110 +600,142 @@ function cambiarRol(proyectoId, usuarioId, selectElem) {
 
 // Función para eliminar miembro
 function eliminarMiembro(proyectoId, usuarioId) {
-    if (!confirm('¿Seguro que deseas eliminar a este miembro del proyecto?')) {
-        return;
-    }
-
-    const miembroElement = document.getElementById(`miembro-${usuarioId}`);
-    const deleteButton = miembroElement.querySelector('button');
-    deleteButton.disabled = true;
-    deleteButton.style.opacity = '0.5';
-    deleteButton.style.cursor = 'not-allowed';
-
-    fetch(`/proyectos/${proyectoId}/miembro/${usuarioId}/eliminar/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            mostrarNotificacion(data.message, 'success');
-            miembroElement.style.transition = 'all 0.3s ease';
-            miembroElement.style.opacity = '0';
-            miembroElement.style.transform = 'translateX(-20px)';
-            
-            setTimeout(() => {
-                miembroElement.remove();
-                const countSpan = document.getElementById('miembros-count');
-                const statSpan = document.getElementById('miembros-stat');
-                let count = parseInt(countSpan.textContent) - 1;
-                countSpan.textContent = count;
-                statSpan.textContent = count;
-
-                const miembrosContainer = document.getElementById('miembros-list');
-                if (miembrosContainer.children.length === 0) {
-                    const emptyDiv = document.createElement('div');
-                    emptyDiv.className = 'p-8 text-center text-gray-500 dark:text-gray-400';
-                    emptyDiv.innerHTML = `
-                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        <p>No hay miembros aún</p>
-                    `;
-                    miembrosContainer.appendChild(emptyDiv);
-                }
-            }, 300);
-        } else {
-            mostrarNotificacion(data.message, 'error');
-            deleteButton.disabled = false;
-            deleteButton.style.opacity = '1';
-            deleteButton.style.cursor = 'pointer';
+    Swal.fire({
+        title: '¿Eliminar miembro?',
+        text: '¿Estás seguro de que deseas eliminar a este miembro del proyecto?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            content: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200',
+            cancelButton: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-200'
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al eliminar el miembro. Inténtalo de nuevo.', 'error');
-        deleteButton.disabled = false;
-        deleteButton.style.opacity = '1';
-        deleteButton.style.cursor = 'pointer';
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const miembroElement = document.getElementById(`miembro-${usuarioId}`);
+            const deleteButton = miembroElement.querySelector('button');
+            deleteButton.disabled = true;
+            deleteButton.style.opacity = '0.5';
+            deleteButton.style.cursor = 'not-allowed';
+
+            fetch(`/proyectos/${proyectoId}/miembro/${usuarioId}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarNotificacion(data.message, 'success');
+                    miembroElement.style.transition = 'all 0.3s ease';
+                    miembroElement.style.opacity = '0';
+                    miembroElement.style.transform = 'translateX(-20px)';
+                    
+                    setTimeout(() => {
+                        miembroElement.remove();
+                        const countSpan = document.getElementById('miembros-count');
+                        const statSpan = document.getElementById('miembros-stat');
+                        let count = parseInt(countSpan.textContent) - 1;
+                        countSpan.textContent = count;
+                        statSpan.textContent = count;
+
+                        const miembrosContainer = document.getElementById('miembros-list');
+                        if (miembrosContainer.children.length === 0) {
+                            const emptyDiv = document.createElement('div');
+                            emptyDiv.className = 'p-8 text-center text-gray-500 dark:text-gray-400';
+                            emptyDiv.innerHTML = `
+                                <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <p>No hay miembros aún</p>
+                            `;
+                            miembrosContainer.appendChild(emptyDiv);
+                        }
+                    }, 300);
+                } else {
+                    mostrarNotificacion(data.message, 'error');
+                    deleteButton.disabled = false;
+                    deleteButton.style.opacity = '1';
+                    deleteButton.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al eliminar el miembro. Inténtalo de nuevo.', 'error');
+                deleteButton.disabled = false;
+                deleteButton.style.opacity = '1';
+                deleteButton.style.cursor = 'pointer';
+            });
+        }
     });
 }
 
 // Función para abandonar proyecto
 function abandonarProyecto() {
-    if (!confirm('¿Estás seguro de que deseas abandonar este proyecto? Esta acción no se puede deshacer.')) {
-        return;
-    }
-
-    const button = event.target.closest('button');
-    button.disabled = true;
-    button.style.opacity = '0.5';
-    button.style.cursor = 'not-allowed';
-
-    fetch(`/proyectos/{{ proyecto.id }}/abandonar/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            mostrarNotificacion(data.message, 'success');
-            setTimeout(() => {
-                window.location.href = data.redirect;
-            }, 1500);
-        } else {
-            mostrarNotificacion(data.message, 'error');
-            button.disabled = false;
-            button.style.opacity = '1';
-            button.style.cursor = 'pointer';
+    Swal.fire({
+        title: '¿Abandonar proyecto?',
+        text: '¿Estás seguro de que deseas abandonar este proyecto? Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Abandonar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            content: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200',
+            cancelButton: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-200'
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al abandonar el proyecto. Inténtalo de nuevo.', 'error');
-        button.disabled = false;
-        button.style.opacity = '1';
-        button.style.cursor = 'pointer';
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const button = event.target.closest('button');
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+
+            fetch(`/proyectos/{{ proyecto.id }}/abandonar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarNotificacion(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1500);
+                } else {
+                    mostrarNotificacion(data.message, 'error');
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al abandonar el proyecto. Inténtalo de nuevo.', 'error');
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.style.cursor = 'pointer';
+            });
+        }
     });
 }
 

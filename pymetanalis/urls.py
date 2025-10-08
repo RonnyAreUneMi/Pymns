@@ -22,7 +22,7 @@ urlpatterns = [
     path('solicitudes/<int:solicitud_id>/gestionar/', views.gestionar_solicitud, name='gestionar_solicitud'),
     path('proyectos/<int:proyecto_id>/invitar/', views.invitar_usuario, name='invitar_usuario'),
     
-    # ==================== URLs DE NOTIFICACIONES (FALTAN ESTAS) ====================
+    # ==================== URLs DE NOTIFICACIONES ====================
     path('notificaciones/obtener/', views.obtener_notificaciones, name='obtener_notificaciones'),
     path('notificaciones/contar/', views.contar_notificaciones, name='contar_notificaciones'),
     path('notificaciones/marcar-leida/<int:notificacion_id>/', views.marcar_notificacion_leida, name='marcar_notificacion_leida'),
