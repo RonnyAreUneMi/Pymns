@@ -208,7 +208,7 @@
                     </h2>
                 </div>
                 <div class="p-6 grid sm:grid-cols-2 gap-4">
-                    <button class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
+                    <a href="{% url 'articulos:subir_archivo' proyecto_id=proyecto.id %}" class="block p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,8 +220,7 @@
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Importar artículos</p>
                             </div>
                         </div>
-                    </button>
-
+                    </a>
                     <button class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
-from pymetanalis import views  # Importar las views de pymetanalis
+from pymetanalis import views
+from django.conf import settings
+from django.conf.urls.static import static  # ← Agregar esta línea
 
 urlpatterns = [
     # URL principal del admin
@@ -37,3 +39,7 @@ urlpatterns = [
     path('notificaciones/marcar-leida/<int:notificacion_id>/', views.marcar_notificacion_leida, name='marcar_notificacion_leida'),
     path('notificaciones/marcar-todas-leidas/', views.marcar_todas_notificaciones_leidas, name='marcar_todas_notificaciones_leidas'),
 ]
+
+# Agregar esto al final (fuera de urlpatterns)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
