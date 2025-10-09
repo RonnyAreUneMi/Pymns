@@ -6,9 +6,11 @@
 {% block content %}
 <div class="max-w-3xl mx-auto mt-10">
     <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Subir Archivo .bib</h1>
-        <p class="text-gray-600 dark:text-gray-400">Importa tus artículos científicos desde un archivo .bib</p>
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Subir Archivo .bib</h1>
+            <p class="text-gray-600 dark:text-gray-400">Importa tus artículos científicos desde un archivo .bib</p>
+        </div>
     </div>
 
     <!-- Mensajes -->
@@ -56,8 +58,15 @@
     <!-- Lista de Archivos Subidos -->
     {% if archivos %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mt-8">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Archivos Subidos</h2>
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Archivos Subidos en esta Sesión</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Estos archivos se limpiarán cuando navegues a ver artículos</p>
+            </div>
+            <a href="{% url 'articulos:ver_articulos' proyecto.id %}" 
+               class="btn-primary px-4 py-2 rounded-lg text-white text-sm font-medium hover:shadow-lg transition-all duration-200">
+                Ver Todos →
+            </a>
         </div>
         
         <div class="p-6">
@@ -67,7 +76,7 @@
                         <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Archivo</th>
                         <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Fecha de Subida</th>
                         <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Artículos</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Acciones</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Estado</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,19 +86,30 @@
                         <td class="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">{{ archivo.fecha_subida|date:"d/m/Y H:i" }}</td>
                         <td class="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">
                             {% if archivo.articulos_procesados > 0 %}
-                                {{ archivo.articulos_procesados }}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                    ✓ {{ archivo.articulos_procesados }} procesados
+                                </span>
                             {% else %}
-                                <span class="text-gray-400">Sin procesar</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                                    Sin procesar
+                                </span>
                             {% endif %}
                         </td>
-                        <td class="py-4 px-4 text-center">
+                        <td class="py-4 px-4">
                             {% if archivo.articulos_procesados > 0 %}
-                                <a href="{% url 'articulos:ver_articulos' proyecto.id %}"
-                                class="btn-primary px-4 py-2 rounded-lg text-white text-sm font-medium inline-block hover:shadow-lg transition-all duration-200">
-                                    Ver Artículos ({{ archivo.articulos_procesados }})
-                                </a>
+                                <span class="inline-flex items-center text-green-600 dark:text-green-400 text-sm font-medium">
+                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Completado
+                                </span>
                             {% else %}
-                                <span class="text-gray-400 dark:text-gray-500 text-sm">Sin artículos</span>
+                                <span class="inline-flex items-center text-yellow-600 dark:text-yellow-400 text-sm font-medium">
+                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Con errores
+                                </span>
                             {% endif %}
                         </td>
                     </tr>

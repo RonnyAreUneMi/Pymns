@@ -9,6 +9,11 @@ import os
 import json
 import io
 
+import bibtexparser
+from bibtexparser.bparser import BibTexParser
+from bibtexparser.customization import convert_to_unicode
+
+
 from .models import Articulo, ArchivoSubida, HistorialArticulo
 from pymetanalis.models import Proyecto, UsuarioProyecto
 from .utils import ExtractorTexto
@@ -24,6 +29,16 @@ def ver_articulos(request, proyecto_id):
         usuario=request.user,
         proyecto=proyecto
     ).first()
+
+    # Limpiar COMPLETAMENTE la sesión de archivos subidos
+    if 'archivos_sesion' in request.session:
+        try:
+            del request.session['archivos_sesion']
+        except KeyError:
+            pass
+    
+    # Forzar el guardado de la sesión
+    request.session.modified = True
 
     # Obtener artículos del proyecto
     articulos = Articulo.objects.filter(proyecto=proyecto).order_by('-fecha_carga')
@@ -166,14 +181,24 @@ def agregar_articulo(request, proyecto_id):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para agregar artículos a este proyecto.')
-
-import bibtexparser
-from bibtexparser.bparser import BibTexParser
-from bibtexparser.customization import convert_to_unicode
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from .models import ArchivoSubida, Articulo
-from pymetanalis.models import Proyecto
+        return redirect('core:home')  # 🔹 Aquí faltaba el return
+    
+    if request.method == 'POST':
+        # Aquí iría la lógica para guardar el nuevo artículo
+        # Ejemplo:
+        titulo = request.POST.get('titulo')
+        if titulo:
+            Articulo.objects.create(
+                proyecto=proyecto,
+                usuario_carga=request.user,
+                titulo=titulo,
+                bibtex_key=f"{titulo[:20]}",
+                bibtex_original="@article{...}"
+            )
+            messages.success(request, 'Artículo agregado correctamente.')
+            return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
+    # Si es GET, mostrar el formulario
+    return render(request, 'indv_articulo.html', {'proyecto': proyecto})
 
 def subir_archivo(request, proyecto_id):
     try:
@@ -181,6 +206,11 @@ def subir_archivo(request, proyecto_id):
     except Proyecto.DoesNotExist:
         messages.error(request, "El proyecto no existe.")
         return redirect('core:home')
+    
+    # Inicializar lista de archivos de la sesión si no existe o está vacía
+    if 'archivos_sesion' not in request.session or request.session['archivos_sesion'] is None:
+        request.session['archivos_sesion'] = []
+        request.session.modified = True
     
     if request.method == 'POST':
         archivo = request.FILES.get('archivo')
@@ -302,6 +332,12 @@ def subir_archivo(request, proyecto_id):
                 nuevo_archivo.errores_procesamiento = errores
             nuevo_archivo.save()
             
+            # Agregar el archivo a la lista de la sesión
+            archivos_sesion = request.session.get('archivos_sesion', [])
+            archivos_sesion.append(nuevo_archivo.id)
+            request.session['archivos_sesion'] = archivos_sesion
+            request.session.modified = True
+            
             # Mostrar mensaje según el resultado
             if cantidad_articulos_procesados > 0:
                 messages.success(
@@ -319,8 +355,9 @@ def subir_archivo(request, proyecto_id):
             
             return redirect('articulos:subir_archivo', proyecto_id=proyecto_id)
 
-    # Obtener archivos del proyecto
-    archivos = ArchivoSubida.objects.filter(proyecto_id=proyecto_id).order_by('-fecha_subida')
+    # Obtener solo los archivos de la sesión actual
+    archivos_ids = request.session.get('archivos_sesion', [])
+    archivos = ArchivoSubida.objects.filter(id__in=archivos_ids).order_by('-fecha_subida')
     
     return render(request, 'subir.html', {
         'proyecto_id': proyecto_id,
