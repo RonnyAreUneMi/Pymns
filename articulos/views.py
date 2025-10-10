@@ -173,7 +173,6 @@ def agregar_articulo(request, proyecto_id):
     """Vista para agregar un nuevo artículo al proyecto."""
     proyecto = get_object_or_404(Proyecto, id=proyecto_id)
     
-    # Verificar que el usuario tiene acceso al proyecto
     usuario_proyecto = UsuarioProyecto.objects.filter(
         usuario=request.user,
         proyecto=proyecto
@@ -181,23 +180,22 @@ def agregar_articulo(request, proyecto_id):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para agregar artículos a este proyecto.')
-        return redirect('core:home')  # 🔹 Aquí faltaba el return
+        return redirect('core:home')
     
     if request.method == 'POST':
-        # Aquí iría la lógica para guardar el nuevo artículo
-        # Ejemplo:
         titulo = request.POST.get('titulo')
         if titulo:
             Articulo.objects.create(
                 proyecto=proyecto,
                 usuario_carga=request.user,
                 titulo=titulo,
-                bibtex_key=f"{titulo[:20]}",
-                bibtex_original="@article{...}"
+                bibtex_key=f"{titulo[:20]}_{timezone.now().timestamp()}",
+                bibtex_original="@article{...}",
+                archivo_bib=None  # 🔹 Artículos manuales no tienen archivo origen
             )
             messages.success(request, 'Artículo agregado correctamente.')
             return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
-    # Si es GET, mostrar el formulario
+    
     return render(request, 'indv_articulo.html', {'proyecto': proyecto})
 
 def subir_archivo(request, proyecto_id):
@@ -307,7 +305,8 @@ def subir_archivo(request, proyecto_id):
                             titulo=titulo[:500],  # Limitar a 500 caracteres
                             doi=entry.get('doi', None),
                             bibtex_original=bibtex_str,
-                            metadata_completos=entry
+                            metadata_completos=entry,
+                            archivo_bib=archivo.name
                         )
                         articulo.save()
                         cantidad_articulos_procesados += 1
