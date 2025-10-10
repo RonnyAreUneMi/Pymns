@@ -39,7 +39,7 @@
             </div>
 
             <!-- Estadísticas rápidas -->
-            <div class="grid sm:grid-cols-4 gap-4">
+            <div class="grid sm:grid-cols-5 gap-4">
                 <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 dark:bg-opacity-20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-sm text-blue-700 dark:text-blue-300 font-medium">Total</span>
@@ -47,7 +47,17 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ articulos.count }}</p>
+                    <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ total_articulos }}</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 dark:bg-opacity-20 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">En Espera</span>
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ articulos_en_espera }}</p>
                 </div>
 
                 <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800 dark:bg-opacity-20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
@@ -57,7 +67,17 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ articulos|length }}</p>
+                    <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ articulos_pendientes }}</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 dark:bg-opacity-20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm text-orange-700 dark:text-orange-300 font-medium">En Proceso</span>
+                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-orange-900 dark:text-orange-100">{{ articulos_en_proceso }}</p>
                 </div>
 
                 <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 dark:bg-opacity-20 rounded-lg p-4 border border-green-200 dark:border-green-700">
@@ -67,17 +87,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold text-green-900 dark:text-green-100">0</p>
-                </div>
-
-                <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 dark:bg-opacity-20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-red-700 dark:text-red-300 font-medium">Rechazados</span>
-                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <p class="text-2xl font-bold text-red-900 dark:text-red-100">0</p>
+                    <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ articulos_aprobados }}</p>
                 </div>
             </div>
         </div>
@@ -102,10 +112,11 @@
                 <div class="flex items-center gap-3">
                     <select id="statusFilterGlobal" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         <option value="">Todos los estados</option>
+                        <option value="EN_ESPERA">En Espera</option>
                         <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En Proceso</option>
                         <option value="EN_REVISION">En Revisión</option>
                         <option value="APROBADO">Aprobado</option>
-                        <option value="RECHAZADO">Rechazado</option>
                     </select>
 
                     <a href="{% url 'articulos:agregar_articulo' proyecto.id %}" class="px-4 py-2 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
@@ -145,10 +156,9 @@
         </div>
     </div>
     
-    {% if articulos %}
+    {% if articulos_con_bib %}
         {% for grupo in articulos_por_archivo %}
             {% if grupo.grouper %}
-                
                 <!-- Sección de archivo .bib -->
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-2xl transition-all duration-300 hover:border-purple-300 dark:hover:border-purple-700">
                     <!-- Header del acordeón -->
@@ -201,7 +211,6 @@
                                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Título</th>
                                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
                                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
                                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -216,30 +225,24 @@
                                                     </svg>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
-                                                    <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{{ articulo.titulo }}</p>
+                                                    <a href="#" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary dark:hover:text-primary-neon line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4" data-estado="{{ articulo.estado }}">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                                {% if articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
+                                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+                                                {% if articulo.estado == 'EN_ESPERA' %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:bg-opacity-30 dark:text-gray-300
+                                                {% elif articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
+                                                {% elif articulo.estado == 'EN_PROCESO' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:bg-opacity-30 dark:text-orange-300
                                                 {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300
                                                 {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
-                                                {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:bg-opacity-30 dark:text-red-300{% endif %}">
+                                                {% endif %}">
                                                 {{ articulo.get_estado_display }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                            {{ articulo.fecha_carga|date:"d/m/Y" }}
+                                            {{ articulo.fecha_carga|date:"d M Y" }}
                                             <span class="block text-xs text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center space-x-2">
-                                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark dark:from-primary-neon dark:to-primary flex items-center justify-center text-white text-xs font-bold">
-                                                    {{ articulo.usuario_carga.first_name.0|default:articulo.usuario_carga.username.0|upper }}
-                                                </div>
-                                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ articulo.usuario_carga.get_full_name|default:articulo.usuario_carga.username }}</span>
-                                            </div>
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div class="flex items-center justify-end space-x-2">
@@ -266,7 +269,17 @@
         {% endfor %}
     {% else %}
         <!-- Estado vacío para archivos BIB -->
-        <div class="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/10 rounded-2xl shadow-xl border-2 border-dashed border-purple-300 dark:border-purple-700 overflow-hidden mb-6"></div>
+        <div class="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/10 rounded-2xl shadow-xl border-2 border-dashed border-purple-300 dark:border-purple-700 overflow-hidden mb-6">
+            <div class="p-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">No hay artículos importados desde archivos BIB</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">Sube un archivo .bib para importar referencias</p>
+            </div>
+        </div>
     {% endif %}
 
     <!-- Encabezado de la sección de artículos manuales -->
@@ -274,7 +287,7 @@
         <div class="relative">
             <div class="flex items-center space-x-4 mb-6">
                 <div class="flex items-center space-x-3 flex-1">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 dark:from-blue-600 dark:via-blue-700 dark:to-blue-800 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 dark:from-orange-600 dark:via-orange-700 dark:to-orange-800 flex items-center justify-center shadow-lg shadow-orange-500/30">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
@@ -282,17 +295,17 @@
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                             Artículos Manuales
-                            <span class="ml-3 text-sm font-normal px-3 py-1 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-700 dark:text-blue-300 rounded-full">Individuales</span>
+                            <span class="ml-3 text-sm font-normal px-3 py-1 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 text-orange-700 dark:text-orange-300 rounded-full">Individuales</span>
                         </h2>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Artículos agregados de forma individual y personalizada</p>
                     </div>
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-blue-700 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-300 dark:via-orange-700 to-transparent"></div>
         </div>
     </div>
 
-    {% if articulos %}
+    {% if articulos_sin_bib %}
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-2xl transition-all duration-300 hover:border-orange-300 dark:hover:border-orange-700">
         <!-- Tabla de artículos -->
         <div class="overflow-x-auto">
@@ -302,77 +315,66 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Título</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    {% for articulo in articulos %}
-                        {% if not articulo.archivo_bib %}
-                            <tr class="hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
-                                <!-- Título -->
-                                <td class="px-6 py-4">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700 flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{{ articulo.titulo }}</p>
-                                        </div>
+                    {% for articulo in articulos_sin_bib %}
+                        <tr class="hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors article-row">
+                            <!-- Título -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700 flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
                                     </div>
-                                </td>
-
-                                <!-- Estado -->
-                                <td class="px-6 py-4" data-estado="{{ articulo.estado }}">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                        {% if articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
-                                        {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
-                                        {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                        {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %}">
-                                        {{ articulo.get_estado_display }}
-                                    </span>
-                                </td>
-
-                                <!-- Fecha -->
-                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                    {{ articulo.fecha_carga|date:"d/m/Y" }}
-                                    <span class="block text-xs text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
-                                </td>
-
-                                <!-- Usuario -->
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center space-x-2">
-                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 dark:from-orange-400 dark:to-orange-600 flex items-center justify-center text-white text-xs font-bold">
-                                            {{ articulo.usuario_carga.first_name.0|default:articulo.usuario_carga.username.0|upper }}
-                                        </div>
-                                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ articulo.usuario_carga.get_full_name|default:articulo.usuario_carga.username }}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <a href="#" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
                                     </div>
-                                </td>
+                                </div>
+                            </td>
 
-                                <!-- Acciones -->
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end space-x-2">
-                                        <!-- Descargar -->
-                                        <button onclick="abrirModalDescarga('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:descargar_articulo' articulo.id %}')" 
-                                            class="p-2 text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors" title="Descargar">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                            </svg>
-                                        </button>
+                            <!-- Estado -->
+                            <td class="px-6 py-4" data-estado="{{ articulo.estado }}">
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+                                    {% if articulo.estado == 'EN_ESPERA' %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:bg-opacity-30 dark:text-gray-300
+                                    {% elif articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
+                                    {% elif articulo.estado == 'EN_PROCESO' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:bg-opacity-30 dark:text-orange-300
+                                    {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300
+                                    {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
+                                    {% endif %}">
+                                    {{ articulo.get_estado_display }}
+                                </span>
+                            </td>
 
-                                        <!-- Eliminar -->
-                                        <button onclick="abrirModalEliminar('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:eliminar_articulo' articulo.id %}')" 
-                                            class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Eliminar">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endif %}
+                            <!-- Fecha -->
+                            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                                {{ articulo.fecha_carga|date:"d M Y" }}
+                                <span class="block text-xs text-gray-500">{{ articulo.fecha_carga|time:"H:i" }}</span>
+                            </td>
+
+                            <!-- Acciones -->
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <!-- Descargar -->
+                                    <button onclick="abrirModalDescarga('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:descargar_articulo' articulo.id %}')" 
+                                        class="p-2 text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors" title="Descargar">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                    </button>
+
+                                    <!-- Eliminar -->
+                                    <button onclick="abrirModalEliminar('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:eliminar_articulo' articulo.id %}')" 
+                                        class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Eliminar">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -381,8 +383,14 @@
     {% else %}
         <!-- Estado vacío -->
         <div class="bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-orange-900/10 rounded-2xl shadow-xl border-2 border-dashed border-orange-300 dark:border-orange-700 overflow-hidden mb-6">
-            <div class="p-6 text-center text-gray-500 dark:text-gray-400">
-                No hay artículos ingresados manualmente aún.
+            <div class="p-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">No hay artículos ingresados manualmente</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">Agrega artículos individuales usando el botón "Nuevo Artículo"</p>
             </div>
         </div>
     {% endif %}

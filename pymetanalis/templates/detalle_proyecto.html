@@ -65,7 +65,6 @@
                     
                     {% if usuario_proyecto %}
                         {% if usuario_proyecto.rol_proyecto != 'DUEÑO' %}
-                            <!-- Botón Abandonar Proyecto -->
                             <button onclick="abandonarProyecto()" class="px-4 py-2 bg-red-50 dark:bg-red-900 dark:bg-opacity-20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 dark:hover:bg-opacity-30 transition-all duration-200 flex items-center space-x-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -140,7 +139,7 @@
                 </div>
             </div>
 
-            <!-- Solicitudes Pendientes (solo para dueño/supervisor) -->
+            <!-- Solicitudes Pendientes -->
             {% if solicitudes_pendientes and solicitudes_pendientes.count > 0 %}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -197,75 +196,81 @@
             </div>
             {% endif %}
 
-            <!-- Acciones Rápidas -->
+            <!-- MENÚ DE OPCIONES DINÁMICO POR ROL CON SUBSECCIONES -->
+            {% if opciones_menu %}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
                         <svg class="w-6 h-6 text-primary dark:text-primary-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
-                        <span>Acciones Rápidas</span>
+                        <span>Menú del Proyecto</span>
+                        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(Rol: {{ usuario_proyecto.get_rol_proyecto_display }})</span>
                     </h2>
                 </div>
-                <div class="p-6 grid sm:grid-cols-2 gap-4">
-                    <a href="{% url 'articulos:subir_archivo' proyecto_id=proyecto.id %}" class="block p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Subir .bib</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Importar artículos</p>
+                <div class="p-6">
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        {% for key, seccion in opciones_menu.items %}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-primary dark:hover:border-primary-neon transition-all duration-200">
+                            <h3 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                                {% if key == 'gestion_tareas' %}
+                                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
+                                {% elif key == 'mis_articulos' %}
+                                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                {% elif key == 'mi_progreso' %}
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                {% elif key == 'supervision' %}
+                                    <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                    </svg>
+                                {% elif key == 'analisis' %}
+                                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                                    </svg>
+                                {% elif key == 'gestion_equipo' %}
+                                    <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                {% endif %}
+                                <span>{{ seccion.titulo }}</span>
+                            </h3>
+                            <div class="space-y-2">
+                                {% for opcion in seccion.opciones %}
+                                {% if opcion.activo %}
+                                    <a href="{{ opcion.url }}" class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-neon transition-colors p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {% if opcion.nombre == 'Invitar Usuario' %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                            {% else %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            {% endif %}
+                                        </svg>
+                                        <span>{{ opcion.nombre }}</span>
+                                    </a>
+                                {% else %}
+                                    <div class="flex items-center space-x-2 text-sm text-gray-400 dark:text-gray-600 p-2 rounded-lg cursor-not-allowed" title="Próximamente">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        <span>{{ opcion.nombre }}</span>
+                                        <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">Próximamente</span>
+                                    </div>
+                                {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
-                    </a>
-                    <button class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                </svg>
-                            </div>
-                            <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="block text-left p-3 rounded-lg">
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Ver Artículos</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Gestionar base</p>
-                            </a>
-                        </div>
-                    </button>
-
-                    <button class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Estadísticas</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Ver reportes</p>
-                            </div>
-                        </div>
-                    </button>
-
-                    {% if puede_gestionar %}
-                    <a href="{% url 'invitar_usuario' proyecto.id %}" class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary-neon hover:shadow-lg transition-all duration-200 group">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-semibold text-gray-900 dark:text-white">Invitar Usuario</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Agregar miembro</p>
-                            </div>
-                        </div>
-                    </a>
-                    {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- Columna Lateral -->
@@ -457,7 +462,6 @@
         </div>
     </div>
 </div>
-
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 

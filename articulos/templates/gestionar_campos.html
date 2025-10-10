@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Campos - {{ proyecto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Breadcrumb -->
+    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+        <a href="{% url 'core:home' %}" class="hover:text-primary dark:hover:text-primary-neon">Inicio</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="{% url 'mis_proyectos' %}" class="hover:text-primary dark:hover:text-primary-neon">Mis Proyectos</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="{% url 'detalle_proyecto' proyecto.id %}" class="hover:text-primary dark:hover:text-primary-neon">{{ proyecto.nombre }}</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-gray-700 dark:text-gray-300">Agregar Variables</span>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+        <div class="p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3 mb-2">
+                        <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Agregar Variables de Búsqueda</span>
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-400">Crea y gestiona los campos que los colaboradores buscarán en los artículos</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'detalle_proyecto' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        <span>Volver</span>
+                    </a>
+                    <button onclick="abrirModalNuevoCampo()" class="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-bold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Nuevo Campo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Contenido -->
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Campos Globales -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Campos Globales</span>
+                    <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ campos_globales.count }})</span>
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Campos predefinidos del sistema, disponibles para todos los proyectos</p>
+            </div>
+            <div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
+                {% if campos_globales %}
+                    {% regroup campos_globales by get_categoria_display as categorias %}
+                    {% for categoria in categorias %}
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700">
+                            <h3 class="font-bold text-gray-900 dark:text-white text-sm flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                                {{ categoria.grouper }}
+                            </h3>
+                        </div>
+                        {% for campo in categoria.list %}
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">{{ campo.nombre }}</h4>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ campo.descripcion|default:"Sin descripción" }}</p>
+                                    <div class="flex items-center space-x-2 mt-2">
+                                        <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-800 dark:text-blue-300 rounded">
+                                            {{ campo.get_tipo_dato_display }}
+                                        </span>
+                                        <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                                            Código: {{ campo.codigo }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="ml-3 flex-shrink-0">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p>No hay campos globales</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Campos Personalizados del Proyecto -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                    </svg>
+                    <span>Campos Personalizados</span>
+                    <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ campos_personalizados.count }})</span>
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Campos específicos de este proyecto que has creado</p>
+            </div>
+            <div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
+                {% if campos_personalizados %}
+                    {% regroup campos_personalizados by get_categoria_display as categorias %}
+                    {% for categoria in categorias %}
+                        <div class="p-4 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20">
+                            <h3 class="font-bold text-gray-900 dark:text-white text-sm flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                                {{ categoria.grouper }}
+                            </h3>
+                        </div>
+                        {% for campo in categoria.list %}
+                        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">{{ campo.nombre }}</h4>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ campo.descripcion|default:"Sin descripción" }}</p>
+                                    <div class="flex items-center space-x-2 mt-2">
+                                        <span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 text-purple-800 dark:text-purple-300 rounded">
+                                            {{ campo.get_tipo_dato_display }}
+                                        </span>
+                                        <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                                            Código: {{ campo.codigo }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                                        Creado por {{ campo.creado_por.get_full_name|default:campo.creado_por.username }} • {{ campo.fecha_creacion|date:"d/m/Y" }}
+                                    </p>
+                                </div>
+                                <div class="ml-3 flex-shrink-0">
+                                    <button onclick="eliminarCampo({{ campo.id }}, '{{ campo.nombre }}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="mb-2">No has creado campos personalizados</p>
+                        <button onclick="abrirModalNuevoCampo()" class="text-sm text-primary dark:text-primary-neon hover:underline">
+                            Crear tu primer campo
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Campo -->
+<div id="modalNuevoCampo" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Crear Nuevo Campo</h3>
+                <button onclick="cerrarModalNuevoCampo()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <form method="POST" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            <!-- Nombre del Campo -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Nombre del Campo <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="nombre" required maxlength="200"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Ej: Tamaño de la muestra">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Nombre descriptivo que verán los colaboradores</p>
+            </div>
+
+            <!-- Código -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Código <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="codigo" required maxlength="50" pattern="[a-z_]+"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Ej: sample_size">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Solo letras minúsculas y guiones bajos. Debe ser único.</p>
+            </div>
+
+            <!-- Categoría -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Categoría <span class="text-red-500">*</span>
+                </label>
+                <select name="categoria" required
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="IDENTIFICACION">Identificación del Estudio</option>
+                    <option value="METODOLOGIA">Metodología</option>
+                    <option value="MUESTRA">Muestra y Participantes</option>
+                    <option value="RESULTADOS">Resultados Estadísticos</option>
+                    <option value="EFECTOS">Tamaños de Efecto</option>
+                    <option value="CALIDAD">Calidad del Estudio</option>
+                    <option value="OTROS">Otros</option>
+                </select>
+            </div>
+
+            <!-- Tipo de Dato -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Tipo de Dato <span class="text-red-500">*</span>
+                </label>
+                <select name="tipo_dato" id="tipo_dato" required onchange="toggleOpcionesValidas()"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    {% for value, label in tipos_dato %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Opciones Válidas (solo si tipo_dato = OPCIONES) -->
+            <div id="div_opciones" class="hidden">
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Opciones Válidas <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="opciones_validas"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Ej: Opción 1, Opción 2, Opción 3">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Separa las opciones con comas</p>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Descripción
+                </label>
+                <textarea name="descripcion" rows="3"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Describe qué deben buscar los colaboradores en este campo..."></textarea>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" onclick="cerrarModalNuevoCampo()" 
+                    class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                    class="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 font-bold flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Crear Campo</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+const csrftoken = getCookie('csrftoken');
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function abrirModalNuevoCampo() {
+    document.getElementById('modalNuevoCampo').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalNuevoCampo() {
+    document.getElementById('modalNuevoCampo').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function toggleOpcionesValidas() {
+    const tipoDato = document.getElementById('tipo_dato').value;
+    const divOpciones = document.getElementById('div_opciones');
+    
+    if (tipoDato === 'OPCIONES') {
+        divOpciones.classList.remove('hidden');
+        divOpciones.querySelector('input').required = true;
+    } else {
+        divOpciones.classList.add('hidden');
+        divOpciones.querySelector('input').required = false;
+    }
+}
+
+function eliminarCampo(campoId, nombreCampo) {
+    Swal.fire({
+        title: '¿Eliminar campo?',
+        html: `¿Estás seguro de que deseas eliminar el campo <strong>"${nombreCampo}"</strong>?<br><small class="text-gray-500">Solo se puede eliminar si no está asignado a ningún artículo.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            htmlContainer: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200',
+            cancelButton: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-200'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/articulos/campo/${campoId}/eliminar/`;
+        }
+    });
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalNuevoCampo();
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalNuevoCampo').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalNuevoCampo();
+    }
+});
+</script>
+{% endblock %}

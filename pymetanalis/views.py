@@ -172,6 +172,14 @@ def detalle_proyecto(request, proyecto_id):
         messages.error(request, 'No tienes acceso a este proyecto.')
         return redirect('mis_proyectos')
     
+    # Guardar proyecto seleccionado en sesión
+    request.session['proyecto_seleccionado'] = {
+        'id': proyecto.id,
+        'nombre': proyecto.nombre,
+        'rol': usuario_proyecto.rol_proyecto if usuario_proyecto else 'ADMIN'
+    }
+    request.session.modified = True
+    
     # Obtener miembros del proyecto
     miembros = UsuarioProyecto.objects.filter(
         proyecto=proyecto
@@ -190,6 +198,219 @@ def detalle_proyecto(request, proyecto_id):
             estado='PENDIENTE'
         ).select_related('usuario').order_by('-fecha_solicitud')
     
+    # Definir opciones de menú según el rol
+    opciones_menu = {}
+    
+    if usuario_proyecto:
+        rol = usuario_proyecto.rol_proyecto
+        
+        # COLABORADOR: Opciones básicas
+        if rol == 'COLABORADOR':
+            opciones_menu = {
+                'mis_articulos': {
+                    'titulo': 'Mis Artículos',
+                    'icono': 'document',
+                    'opciones': [
+                        {
+                            'nombre': 'Visualizar Artículos',
+                            'url': reverse('articulos:ver_articulos', args=[proyecto.id]),
+                            'icono': 'eye',
+                            'activo': True
+                        },
+                        {
+                            'nombre': 'Subir Archivos .bib',
+                            'url': reverse('articulos:subir_archivo', args=[proyecto.id]),
+                            'icono': 'upload',
+                            'activo': True
+                        }
+                    ]
+                },
+                'mi_progreso': {
+                    'titulo': 'Mi Progreso',
+                    'icono': 'chart',
+                    'opciones': [
+                        {
+                            'nombre': 'Estadísticas Personales',
+                            'url': '#',
+                            'icono': 'trending-up',
+                            'activo': False
+                        }
+                    ]
+                }
+            }
+        
+        # SUPERVISOR: Colaborador + Supervisión
+        elif rol == 'SUPERVISOR':
+            opciones_menu = {
+                'mis_articulos': {
+                    'titulo': 'Mis Artículos',
+                    'icono': 'document',
+                    'opciones': [
+                        {
+                            'nombre': 'Visualizar Artículos',
+                            'url': reverse('articulos:ver_articulos', args=[proyecto.id]),
+                            'icono': 'eye',
+                            'activo': True
+                        },
+                        {
+                            'nombre': 'Subir Archivos .bib',
+                            'url': reverse('articulos:subir_archivo', args=[proyecto.id]),
+                            'icono': 'upload',
+                            'activo': True
+                        }
+                    ]
+                },
+                'mi_progreso': {
+                    'titulo': 'Mi Progreso',
+                    'icono': 'chart',
+                    'opciones': [
+                        {
+                            'nombre': 'Estadísticas Personales',
+                            'url': '#',
+                            'icono': 'trending-up',
+                            'activo': False
+                        }
+                    ]
+                },
+                'supervision': {
+                    'titulo': 'Supervisión',
+                    'icono': 'clipboard-check',
+                    'opciones': [
+                        {
+                            'nombre': 'Bandeja de Revisión',
+                            'url': '#',
+                            'icono': 'inbox',
+                            'activo': False
+                        }
+                    ]
+                },
+                'gestion_equipo': {
+                    'titulo': 'Gestión de Equipo',
+                    'icono': 'users',
+                    'opciones': [
+                        {
+                            'nombre': 'Invitar Usuario',
+                            'url': reverse('invitar_usuario', args=[proyecto.id]),
+                            'icono': 'user-plus',
+                            'activo': True
+                        }
+                    ]
+                },
+                'analisis': {
+                    'titulo': 'Análisis',
+                    'icono': 'bar-chart',
+                    'opciones': [
+                        {
+                            'nombre': 'Estadísticas del Proyecto',
+                            'url': '#',
+                            'icono': 'pie-chart',
+                            'activo': False
+                        }
+                    ]
+                }
+            }
+        
+        # DUEÑO: Todo lo anterior + Gestión de Tareas
+        elif rol == 'DUEÑO':
+            opciones_menu = {
+                'gestion_tareas': {
+                    'titulo': 'Gestión de Tareas',
+                    'icono': 'clipboard-list',
+                    'opciones': [
+                        {
+                            'nombre': 'Asignar Tareas',
+                            'url': reverse('articulos:asignar_tareas', args=[proyecto.id]),
+                            'icono': 'user-check',
+                            'activo': True
+                        },
+                        {
+                            'nombre': 'Agregar Variables',
+                            'url': reverse('articulos:gestionar_campos', args=[proyecto.id]),
+                            'icono': 'plus-circle',
+                            'activo': True 
+                        },
+                        {
+                            'nombre': 'Gestionar Plantillas',
+                            'url': reverse('articulos:gestionar_plantillas', args=[proyecto.id]),
+                            'icono': 'layers',
+                            'activo': True  
+                        }
+                    ]
+                },
+                'mis_articulos': {
+                    'titulo': 'Mis Artículos',
+                    'icono': 'document',
+                    'opciones': [
+                        {
+                            'nombre': 'Visualizar Artículos',
+                            'url': reverse('articulos:ver_articulos', args=[proyecto.id]),
+                            'icono': 'eye',
+                            'activo': True
+                        },
+                        {
+                            'nombre': 'Subir Archivos .bib',
+                            'url': reverse('articulos:subir_archivo', args=[proyecto.id]),
+                            'icono': 'upload',
+                            'activo': True
+                        }
+                    ]
+                },
+                'mi_progreso': {
+                    'titulo': 'Mi Progreso',
+                    'icono': 'chart',
+                    'opciones': [
+                        {
+                            'nombre': 'Estadísticas Personales',
+                            'url': '#',
+                            'icono': 'trending-up',
+                            'activo': False
+                        }
+                    ]
+                },
+                'supervision': {
+                    'titulo': 'Supervisión',
+                    'icono': 'clipboard-check',
+                    'opciones': [
+                        {
+                            'nombre': 'Bandeja de Revisión',
+                            'url': '#',
+                            'icono': 'inbox',
+                            'activo': False
+                        }
+                    ]
+                },
+                'gestion_equipo': {
+                    'titulo': 'Gestión de Equipo',
+                    'icono': 'users',
+                    'opciones': [
+                        {
+                            'nombre': 'Invitar Usuario',
+                            'url': reverse('invitar_usuario', args=[proyecto.id]),
+                            'icono': 'user-plus',
+                            'activo': True
+                        }
+                    ]
+                },
+                'analisis': {
+                    'titulo': 'Análisis',
+                    'icono': 'bar-chart',
+                    'opciones': [
+                        {
+                            'nombre': 'Estadísticas del Proyecto',
+                            'url': '#',
+                            'icono': 'pie-chart',
+                            'activo': False
+                        },
+                        {
+                            'nombre': 'Estadísticas por Usuario',
+                            'url': '#',
+                            'icono': 'users',
+                            'activo': False
+                        }
+                    ]
+                }
+            }
+    
     context = {
         'proyecto': proyecto,
         'usuario_proyecto': usuario_proyecto,
@@ -198,11 +419,12 @@ def detalle_proyecto(request, proyecto_id):
         'solicitudes_pendientes': solicitudes_pendientes,
         'es_dueno': usuario_proyecto and usuario_proyecto.rol_proyecto == 'DUEÑO',
         'es_supervisor': usuario_proyecto and usuario_proyecto.rol_proyecto == 'SUPERVISOR',
+        'es_colaborador': usuario_proyecto and usuario_proyecto.rol_proyecto == 'COLABORADOR',
         'puede_gestionar': (usuario_proyecto and usuario_proyecto.rol_proyecto in ['DUEÑO', 'SUPERVISOR']) or es_admin,
+        'opciones_menu': opciones_menu,
     }
     
     return render(request, 'detalle_proyecto.html', context)
-
 @login_required
 def buscar_proyectos(request):
     """Vista para buscar proyectos públicos"""

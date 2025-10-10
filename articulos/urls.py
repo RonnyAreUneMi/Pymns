@@ -6,8 +6,41 @@ from . import views
 app_name = 'articulos'
 
 urlpatterns = [
-    # ✅ NUEVA: Ruta principal para seleccionar proyecto
-    path('', views.seleccionar_proyecto_articulos, name='seleccionar_proyecto'),
+        # ==================== GESTIÓN DE CAMPOS ====================
+    path('proyecto/<int:proyecto_id>/campos/', 
+         views.gestionar_campos, 
+         name='gestionar_campos'),
+    
+    path('campo/<int:campo_id>/eliminar/', 
+         views.eliminar_campo, 
+         name='eliminar_campo'),
+    
+    # ==================== ASIGNACIÓN DE TAREAS ====================
+    path('proyecto/<int:proyecto_id>/asignar-tareas/', 
+         views.asignar_tareas, 
+         name='asignar_tareas'),
+    
+    path('proyecto/<int:proyecto_id>/usuario/<int:usuario_id>/articulos/', 
+         views.cargar_articulos_usuario, 
+         name='cargar_articulos_usuario'),
+    
+    path('proyecto/<int:proyecto_id>/asignar-campos/', 
+         views.asignar_campos_articulos, 
+         name='asignar_campos_articulos'),
+    
+    # ==================== PLANTILLAS ====================
+    path('proyecto/<int:proyecto_id>/plantillas/', 
+         views.gestionar_plantillas, 
+         name='gestionar_plantillas'),
+    
+    path('plantilla/<int:plantilla_id>/eliminar/', 
+         views.eliminar_plantilla, 
+         name='eliminar_plantilla'),
+    
+    path('proyecto/<int:proyecto_id>/plantilla/aplicar-masiva/', 
+         views.aplicar_plantilla_masiva, 
+         name='aplicar_plantilla_masiva'),
+
     
     # Rutas específicas de proyecto
     path('<int:proyecto_id>/', views.ver_articulos, name='ver_articulos'),
