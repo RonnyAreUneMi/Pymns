@@ -57,10 +57,11 @@
             }
         }
         
-        /* BOTONES PRIMARIOS - CORREGIDOS */
+        /* BOTONES PRIMARIOS */
         .btn-primary {
             background: linear-gradient(135deg, #FF896C, #FF5722);
             box-shadow: 0 4px 15px rgba(255, 137, 108, 0.3);
+            transition: all 0.3s ease;
         }
         
         .btn-primary:hover {
@@ -83,7 +84,7 @@
             box-shadow: 4px 0 20px rgba(255, 107, 53, 0.3);
         }
 
-        /* MENÚ SIDEBAR - CORREGIDO */
+        /* MENÚ SIDEBAR */
         .sidebar nav a {
             transition: all 0.2s ease;
         }
@@ -117,37 +118,37 @@
             font-weight: 500;
         }
 
-        /* CORRECCIONES DE HOVER PARA ENLACES Y BOTONES */
-        a.hover\:text-primary:hover,
-        .hover\:text-primary:hover {
+        /* HOVER PARA ENLACES CON CLASES ESPECÍFICAS */
+        a.hover\:text-primary:hover {
             color: #FF896C !important;
         }
 
-        .dark a.hover\:text-primary-neon:hover,
-        .dark .hover\:text-primary-neon:hover {
+        .dark a.hover\:text-primary-neon:hover {
             color: #FF6B35 !important;
         }
 
-        a.hover\:text-primary-dark:hover,
-        .hover\:text-primary-dark:hover {
+        a.hover\:text-primary-dark:hover {
             color: #FF5722 !important;
         }
 
-        .dark a.hover\:text-primary:hover,
-        .dark .hover\:text-primary:hover {
+        .dark a.hover\:text-primary:hover {
             color: #FF896C !important;
         }
 
-        /* CORRECCIONES PARA BOTONES SECUNDARIOS */
+        /* BOTONES SECUNDARIOS CON HOVER ESPECÍFICO */
+        button.bg-white.hover\:bg-gray-50:hover,
         .bg-white.hover\:bg-gray-50:hover {
             background-color: rgb(249, 250, 251) !important;
         }
 
+        button.bg-white.hover\:bg-gray-100:hover,
         .bg-white.hover\:bg-gray-100:hover {
             background-color: rgb(243, 244, 246) !important;
         }
 
+        .dark button.bg-white.hover\:bg-gray-50:hover,
         .dark .bg-white.hover\:bg-gray-50:hover,
+        .dark button.bg-white.hover\:bg-gray-100:hover,
         .dark .bg-white.hover\:bg-gray-100:hover {
             background-color: rgb(55, 65, 81) !important;
         }
@@ -156,16 +157,18 @@
             background-color: rgb(55, 65, 81) !important;
         }
 
-        /* CORRECCIONES PARA TOGGLES Y BOTONES DE ICONO */
+        /* TOGGLES Y BOTONES DE ICONO */
+        button.bg-gray-100.hover\:bg-gray-200:hover,
         .bg-gray-100.hover\:bg-gray-200:hover {
             background-color: rgb(229, 231, 235) !important;
         }
 
+        .dark button.dark\:bg-gray-700.dark\:hover\:bg-gray-600:hover,
         .dark .dark\:bg-gray-700.dark\:hover\:bg-gray-600:hover {
             background-color: rgb(75, 85, 99) !important;
         }
 
-        /* CORRECCIONES PARA CARDS */
+        /* CARDS CON HOVER */
         .hover\:shadow-xl:hover {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
         }
@@ -183,26 +186,26 @@
             border-color: #FF6B35 !important;
         }
 
-        /* CORRECCIONES PARA DROPDOWNS */
-        .hover\:bg-gray-100:hover {
+        /* DROPDOWNS */
+        [class*="hover:bg-gray-100"]:hover {
             background-color: rgb(243, 244, 246) !important;
         }
 
-        .dark .hover\:bg-gray-700:hover,
-        .dark .dark\:hover\:bg-gray-700:hover {
+        .dark [class*="hover:bg-gray-700"]:hover,
+        .dark [class*="dark:hover:bg-gray-700"]:hover {
             background-color: rgb(55, 65, 81) !important;
         }
 
-        .hover\:bg-gray-50:hover {
+        [class*="hover:bg-gray-50"]:hover {
             background-color: rgb(249, 250, 251) !important;
         }
 
-        .dark .hover\:bg-gray-800:hover,
-        .dark .dark\:hover\:bg-gray-800:hover {
+        .dark [class*="hover:bg-gray-800"]:hover,
+        .dark [class*="dark:hover:bg-gray-800"]:hover {
             background-color: rgb(31, 41, 55) !important;
         }
 
-        /* CORRECCIONES PARA HOVER EN TEXTO ROJO (CERRAR SESIÓN) */
+        /* HOVER EN TEXTO ROJO (CERRAR SESIÓN) */
         .hover\:bg-red-50:hover {
             background-color: rgb(254, 242, 242) !important;
         }
@@ -340,7 +343,7 @@
             background: linear-gradient(to bottom, rgba(31, 41, 55, 1), rgba(31, 41, 55, 0.8));
         }
 
-        /* CORRECCIONES PARA INPUTS Y SELECTS */
+        /* INPUTS Y SELECTS - SOLO FOCUS */
         input[type="text"]:focus,
         input[type="email"]:focus,
         input[type="password"]:focus,
@@ -367,35 +370,22 @@
         select:focus,
         textarea:focus,
         button:focus {
-            --tw-ring-shadow: none !important;
-            --tw-ring-offset-shadow: none !important;
             outline: none !important;
         }
 
-        /* PREVENIR DOBLE BORDE EN FOCUS */
-        .focus\:ring-2:focus {
-            --tw-ring-shadow: none !important;
-        }
-
-        .focus\:border-transparent:focus {
-            border-color: #FF896C !important;
-        }
-
-        .dark .focus\:border-transparent:focus {
-            border-color: #FF6B35 !important;
-        }
-
-        /* PREVENCIÓN DE FONDOS NEGROS GENERALES */
-        button:hover:not(.btn-primary):not([class*="bg-"]) {
-            background-color: transparent;
-        }
-
-        a:hover:not([class*="bg-"]) {
-            background-color: transparent;
-        }
-
-        /* ASEGURAR TRANSICIONES SUAVES */
-        button, a, div[class*="hover"], input, select, textarea {
+        /* TRANSICIONES SUAVES SOLO PARA ELEMENTOS ESPECÍFICOS */
+        button, 
+        a[class*="hover"], 
+        [class*="hover:bg-"],
+        [class*="hover:text-"],
+        [class*="hover:border-"],
+        [class*="hover:shadow-"],
+        input, 
+        select, 
+        textarea,
+        .sidebar nav a,
+        .notification-item,
+        .btn-primary {
             transition: all 0.2s ease;
         }
 
@@ -408,19 +398,6 @@
         button[class*="gradient"]:hover, 
         .bg-gradient-to-r:hover {
             transform: translateY(-2px);
-        }
-
-        /* PREVENIR CUALQUIER BACKGROUND BLACK */
-        *:hover {
-            background-color: inherit;
-        }
-
-        /* EXCEPCIONES NECESARIAS */
-        .btn-primary:hover,
-        .sidebar nav a:hover,
-        .notification-item:hover,
-        [class*="hover:bg-"]:hover {
-            background-color: revert !important;
         }
     </style>
     {% block extra_head %}{% endblock %}
