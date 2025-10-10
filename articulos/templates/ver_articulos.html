@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}Artículos - {{ proyecto.nombre }} - PM{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto">
     <!-- Breadcrumb -->
@@ -19,6 +21,7 @@
         </svg>
         <span class="text-gray-700 dark:text-gray-300">Artículos</span>
     </div>
+
     <!-- Header -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
         <div class="p-6">
@@ -79,6 +82,7 @@
             </div>
         </div>
     </div>
+
     <!-- Controles de búsqueda y botón nuevo -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
         <div class="p-6">
@@ -93,6 +97,7 @@
                         </svg>
                     </div>
                 </div>
+
                 <!-- Filtros y acciones -->
                 <div class="flex items-center gap-3">
                     <select id="statusFilterGlobal" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
@@ -102,6 +107,7 @@
                         <option value="APROBADO">Aprobado</option>
                         <option value="RECHAZADO">Rechazado</option>
                     </select>
+
                     <a href="{% url 'articulos:agregar_articulo' proyecto.id %}" class="px-4 py-2 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -112,57 +118,82 @@
             </div>
         </div>
     </div>
+
+    <!-- Artículos agrupados por archivo .bib -->
+    {% regroup articulos by archivo_bib as articulos_por_archivo %}
+    
+    <!-- Encabezado de la sección de archivos BIB -->
+    <div class="mb-8">
+        <div class="relative">
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="flex items-center space-x-3 flex-1">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 dark:from-purple-600 dark:via-purple-700 dark:to-purple-800 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-8m0 0l-3 3m3-3l3 3M4 20h16a1 1 0 001-1V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0014.586 3H5a1 1 0 00-1 1v15a1 1 0 001 1z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                            Archivos BIB Cargados
+                            <span class="ml-3 text-sm font-normal px-3 py-1 bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 text-purple-700 dark:text-purple-300 rounded-full">Importados</span>
+                        </h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Artículos importados desde archivos de referencias bibliográficas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-300 dark:via-purple-700 to-transparent"></div>
+        </div>
+    </div>
+    
     {% if articulos %}
-        <!-- Artículos agrupados por archivo .bib -->
-        {% regroup articulos by archivo_bib as articulos_por_archivo %}
         {% for grupo in articulos_por_archivo %}
             {% if grupo.grouper %}
-                <!-- Acordeón para archivo .bib -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                
+                <!-- Sección de archivo .bib -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-2xl transition-all duration-300 hover:border-purple-300 dark:hover:border-purple-700">
                     <!-- Header del acordeón -->
-                    <button onclick="toggleAccordion('{{ grupo.grouper|slugify }}')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="toggleAccordion('{{ grupo.grouper|slugify }}')" class="w-full p-8 flex items-center justify-between hover:bg-gradient-to-r hover:from-purple-50 hover:to-transparent dark:hover:from-purple-900/20 dark:hover:to-transparent transition-all duration-300 group">
+                        <div class="flex items-center space-x-5">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 dark:from-purple-600 dark:via-purple-700 dark:to-purple-800 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 group-hover:scale-105 transition-all duration-300">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
                             <div class="text-left">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ grupo.grouper }}</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ grupo.list|length }} artículos
-                                    <span class="mx-2">•</span>
-                                    <span class="text-green-600 dark:text-green-400">{{ conteos.aprobados }}</span>
-                                    <span class="mx-2">•</span>
-                                    <span class="text-yellow-600 dark:text-yellow-400">{{ grupo.list|length }}</span>
-                                </p>
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{{ grupo.grouper }}</h3>
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 text-purple-700 dark:text-purple-300">
+                                        {{ grupo.list|length }} artículos
+                                    </span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">•</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">Archivo BibTeX</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <!-- Acciones rápidas -->
-                            <a href="{% url 'articulos:descargar_archivo_bib' grupo.grouper %}?proyecto_id={{ proyecto.id }}" onclick="event.stopPropagation()" class="p-2 text-gray-400 hover:text-primary dark:hover:text-primary-neon transition-colors" title="Descargar .bib completo">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                            </a>
+                        
+                        <div class="flex items-center space-x-4">
                             <!-- Icono de expansión -->
-                            <svg id="icon-{{ grupo.grouper|slugify }}" class="w-6 h-6 text-gray-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors">
+                                <svg id="icon-{{ grupo.grouper|slugify }}" class="w-6 h-6 text-purple-600 dark:text-purple-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
                         </div>
                     </button>
+
                     <!-- Contenido del acordeón -->
                     <div id="accordion-{{ grupo.grouper|slugify }}" class="hidden">
-                        <!-- Búsqueda individual -->
-                        <div class="px-6 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <div class="relative max-w-md">
-                                <input type="text" class="search-file w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Buscar en este archivo...">
-                                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Búsqueda individual del archivo -->
+                        <div class="px-8 pb-6 border-t border-gray-200 dark:border-gray-700 pt-6 bg-gray-50 dark:bg-gray-900/50">
+                            <div class="relative max-w-lg">
+                                <input type="text" class="search-file w-full pl-12 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200" placeholder="Buscar en este archivo...">
+                                <svg class="w-5 h-5 absolute left-4 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
                         </div>
-                        <!-- Tabla de artículos -->
+
+                        <!-- Tabla de artículos del archivo -->
                         <div class="overflow-x-auto">
                             <table class="w-full file-table">
                                 <thead class="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
@@ -176,7 +207,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     {% for articulo in grupo.list %}
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors article-row" data-page="1">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors article-row">
                                         <td class="px-6 py-4">
                                             <div class="flex items-start space-x-3">
                                                 <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-dark dark:from-primary-neon dark:to-primary flex items-center justify-center flex-shrink-0">
@@ -200,7 +231,7 @@
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                                             {{ articulo.fecha_carga|date:"d/m/Y" }}
-                                            <span class="block text-xs text-gray-500 dark:text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
+                                            <span class="block text-xs text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex items-center space-x-2">
@@ -229,142 +260,139 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Paginación (solo si hay más de 10 artículos) -->
-                        {% if grupo.list|length > 10 %}
-                        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm text-gray-600 dark:text-gray-400">
-                                    Mostrando <span class="font-semibold current-start">1</span>-<span class="font-semibold current-end">10</span> de <span class="font-semibold">{{ grupo.list|length }}</span> artículos
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <button class="pagination-prev px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                        Anterior
-                                    </button>
-                                    <div class="pagination-numbers flex items-center space-x-1"></div>
-                                    <button class="pagination-next px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        Siguiente
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
-        <!-- Artículos manuales (sin archivo .bib) -->
-        {% for grupo in articulos_por_archivo %}
-            {% if not grupo.grouper %}
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Artículos Manuales</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ grupo.list|length }} artículos ingresados individualmente</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Título</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
-                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                {% for articulo in grupo.list %}
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors article-row">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-start space-x-3">
-                                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-dark dark:from-primary-neon dark:to-primary flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{{ articulo.titulo }}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4" data-estado="{{ articulo.estado }}">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                            {% if articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
-                                            {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300
-                                            {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
-                                            {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:bg-opacity-30 dark:text-red-300{% endif %}">
-                                            {{ articulo.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                        {{ articulo.fecha_carga|date:"d/m/Y" }}
-                                        <span class="block text-xs text-gray-500 dark:text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark dark:from-primary-neon dark:to-primary flex items-center justify-center text-white text-xs font-bold">
-                                                {{ articulo.usuario_carga.first_name.0|default:articulo.usuario_carga.username.0|upper }}
-                                            </div>
-                                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ articulo.usuario_carga.get_full_name|default:articulo.usuario_carga.username }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end space-x-2">
-                                            <button onclick="abrirModalDescarga('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:descargar_articulo' articulo.id %}')" class="p-2 text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors" title="Descargar">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                </svg>
-                                            </button>
-                                            <button onclick="abrirModalEliminar('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:eliminar_articulo' articulo.id %}')" class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Eliminar">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             {% endif %}
         {% endfor %}
     {% else %}
-        <!-- Estado vacío -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="p-12 text-center">
-                <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                    <svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
+        <!-- Estado vacío para archivos BIB -->
+        <div class="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/10 rounded-2xl shadow-xl border-2 border-dashed border-purple-300 dark:border-purple-700 overflow-hidden mb-6"></div>
+    {% endif %}
+
+    <!-- Encabezado de la sección de artículos manuales -->
+    <div class="mb-8 mt-12">
+        <div class="relative">
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="flex items-center space-x-3 flex-1">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 dark:from-blue-600 dark:via-blue-700 dark:to-blue-800 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                            Artículos Manuales
+                            <span class="ml-3 text-sm font-normal px-3 py-1 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-700 dark:text-blue-300 rounded-full">Individuales</span>
+                        </h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Artículos agregados de forma individual y personalizada</p>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No hay artículos todavía</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">Comienza subiendo tu primer archivo .bib para agregar artículos al proyecto</p>
-                <a href="{% url 'articulos:subir_archivo' proyecto_id=proyecto.id %}" class="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg transition-all duration-200 space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <span>Subir Archivo .bib</span>
-                </a>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-blue-700 to-transparent"></div>
+        </div>
+    </div>
+
+    {% if articulos %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-2xl transition-all duration-300 hover:border-orange-300 dark:hover:border-orange-700">
+        <!-- Tabla de artículos -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Título</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for articulo in articulos %}
+                        {% if not articulo.archivo_bib %}
+                            <tr class="hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
+                                <!-- Título -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{{ articulo.titulo }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Estado -->
+                                <td class="px-6 py-4" data-estado="{{ articulo.estado }}">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                                        {% if articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                                        {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                                        {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                        {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %}">
+                                        {{ articulo.get_estado_display }}
+                                    </span>
+                                </td>
+
+                                <!-- Fecha -->
+                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                                    {{ articulo.fecha_carga|date:"d/m/Y" }}
+                                    <span class="block text-xs text-gray-500">{{ articulo.fecha_carga|date:"H:i" }}</span>
+                                </td>
+
+                                <!-- Usuario -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 dark:from-orange-400 dark:to-orange-600 flex items-center justify-center text-white text-xs font-bold">
+                                            {{ articulo.usuario_carga.first_name.0|default:articulo.usuario_carga.username.0|upper }}
+                                        </div>
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ articulo.usuario_carga.get_full_name|default:articulo.usuario_carga.username }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Acciones -->
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <!-- Descargar -->
+                                        <button onclick="abrirModalDescarga('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:descargar_articulo' articulo.id %}')" 
+                                            class="p-2 text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors" title="Descargar">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Eliminar -->
+                                        <button onclick="abrirModalEliminar('{{ articulo.id }}', '{{ articulo.titulo|escapejs }}', '{% url 'articulos:eliminar_articulo' articulo.id %}')" 
+                                            class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Eliminar">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-orange-900/10 rounded-2xl shadow-xl border-2 border-dashed border-orange-300 dark:border-orange-700 overflow-hidden mb-6">
+            <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                No hay artículos ingresados manualmente aún.
             </div>
         </div>
     {% endif %}
 </div>
 
+<!-- Modales y Scripts -->
 <!-- Modal de Confirmación de Descarga -->
 <div id="modalDescarga" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 transition-opacity duration-300">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalDescargaContent">
         <div class="p-6">
-            <!-- Header -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-3">
                     <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 dark:bg-opacity-30 flex items-center justify-center">
@@ -380,27 +408,15 @@
                     </svg>
                 </button>
             </div>
-            <!-- Content -->
             <div class="mb-6">
-                <p class="text-gray-600 dark:text-gray-400 mb-4">
-                    ¿Deseas descargar este artículo en formato BibTeX?
-                </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">¿Deseas descargar este artículo en formato BibTeX?</p>
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                     <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2" id="tituloArticuloDescarga"></p>
                 </div>
-                <!-- Información de formato -->
-                <div class="mt-4">
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Formato disponible: <span class="font-semibold">BibTeX (.bib)</span>
-                    </p>
-                </div>
             </div>
-            <!-- Actions -->
             <div class="flex items-center justify-end space-x-3">
-                <button onclick="cerrarModalDescarga()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">
-                    Cancelar
-                </button>
-                <button onclick="confirmarDescarga()" class="px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
+                <button onclick="cerrarModalDescarga()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">Cancelar</button>
+                <button onclick="confirmarDescarga()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                     </svg>
@@ -415,7 +431,6 @@
 <div id="modalEliminar" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 transition-opacity duration-300">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalEliminarContent">
         <div class="p-6">
-            <!-- Header -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-3">
                     <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900 dark:bg-opacity-30 flex items-center justify-center">
@@ -431,26 +446,18 @@
                     </svg>
                 </button>
             </div>
-            <!-- Content -->
             <div class="mb-6">
                 <div class="bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-red-800 dark:text-red-300 font-medium">
-                        ⚠️ Esta acción no se puede deshacer
-                    </p>
+                    <p class="text-sm text-red-800 dark:text-red-300 font-medium">⚠️ Esta acción no se puede deshacer</p>
                 </div>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">
-                    ¿Estás seguro de que deseas eliminar este artículo?
-                </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">¿Estás seguro de que deseas eliminar este artículo?</p>
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                     <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2" id="tituloArticuloEliminar"></p>
                 </div>
             </div>
-            <!-- Actions -->
             <div class="flex items-center justify-end space-x-3">
-                <button onclick="cerrarModalEliminar()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">
-                    Cancelar
-                </button>
-                <button onclick="confirmarEliminacion()" class="px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
+                <button onclick="cerrarModalEliminar()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">Cancelar</button>
+                <button onclick="confirmarEliminacion()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
@@ -461,24 +468,16 @@
     </div>
 </div>
 
-<!-- Scripts -->
 <script>
-// Variables globales para almacenar el contexto
-let articuloActual = {
-    id: null,
-    titulo: '',
-    url: ''
-};
+// Variables globales
+let articuloActual = { id: null, titulo: '', url: '' };
 
-// ============ FUNCIONES PARA MODAL DE DESCARGA ============
+// Funciones de modales
 function abrirModalDescarga(articuloId, titulo, urlDescarga) {
-    articuloActual.id = articuloId;
-    articuloActual.titulo = titulo;
-    articuloActual.url = urlDescarga;
+    articuloActual = { id: articuloId, titulo: titulo, url: urlDescarga };
+    document.getElementById('tituloArticuloDescarga').textContent = titulo;
     const modal = document.getElementById('modalDescarga');
     const content = document.getElementById('modalDescargaContent');
-    const tituloElement = document.getElementById('tituloArticuloDescarga');
-    tituloElement.textContent = titulo;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     setTimeout(() => {
@@ -499,20 +498,15 @@ function cerrarModalDescarga() {
 }
 
 function confirmarDescarga() {
-    // Solo redirigir a la URL ya construida (que ya entrega .bib)
     window.location.href = articuloActual.url;
     cerrarModalDescarga();
 }
 
-// ============ FUNCIONES PARA MODAL DE ELIMINACIÓN ============
 function abrirModalEliminar(articuloId, titulo, urlEliminar) {
-    articuloActual.id = articuloId;
-    articuloActual.titulo = titulo;
-    articuloActual.url = urlEliminar;
+    articuloActual = { id: articuloId, titulo: titulo, url: urlEliminar };
+    document.getElementById('tituloArticuloEliminar').textContent = titulo;
     const modal = document.getElementById('modalEliminar');
     const content = document.getElementById('modalEliminarContent');
-    const tituloElement = document.getElementById('tituloArticuloEliminar');
-    tituloElement.textContent = titulo;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     setTimeout(() => {
@@ -536,7 +530,7 @@ function confirmarEliminacion() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = articuloActual.url;
-    const csrfToken = getCookie('csrftoken');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
     csrfInput.name = 'csrfmiddlewaretoken';
@@ -544,7 +538,6 @@ function confirmarEliminacion() {
     form.appendChild(csrfInput);
     document.body.appendChild(form);
     form.submit();
-    cerrarModalEliminar();
 }
 
 function getCookie(name) {
@@ -562,112 +555,22 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Cerrar modales al hacer clic fuera
+// Función de acordeón
+function toggleAccordion(id) {
+    const content = document.getElementById(`accordion-${id}`);
+    const icon = document.getElementById(`icon-${id}`);
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Búsqueda y filtros
 document.addEventListener('DOMContentLoaded', function() {
-    const modalDescarga = document.getElementById('modalDescarga');
-    const modalEliminar = document.getElementById('modalEliminar');
-    if (modalDescarga) {
-        modalDescarga.addEventListener('click', function(e) {
-            if (e.target === this) {
-                cerrarModalDescarga();
-            }
-        });
-    }
-    if (modalEliminar) {
-        modalEliminar.addEventListener('click', function(e) {
-            if (e.target === this) {
-                cerrarModalEliminar();
-            }
-        });
-    }
-});
-
-// Cerrar modales con Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        cerrarModalDescarga();
-        cerrarModalEliminar();
-    }
-});
-
-// ============ FUNCIONES EXISTENTES (Acordeón, búsqueda, paginación) ============
-document.addEventListener('DOMContentLoaded', function() {
-    const ITEMS_PER_PAGE = 10;
-
-    window.toggleAccordion = function(id) {
-        const content = document.getElementById(`accordion-${id}`);
-        const icon = document.getElementById(`icon-${id}`);
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            icon.style.transform = 'rotate(180deg)';
-        } else {
-            content.classList.add('hidden');
-            icon.style.transform = 'rotate(0deg)';
-        }
-    };
-
-    document.querySelectorAll('.file-table').forEach(table => {
-        const rows = Array.from(table.querySelectorAll('tbody .article-row'));
-        if (rows.length > ITEMS_PER_PAGE) {
-            initPagination(table, rows);
-        }
-    });
-
-    function initPagination(table, rows) {
-        const container = table.closest('.overflow-x-auto').nextElementSibling;
-        if (!container) return;
-        const prevBtn = container.querySelector('.pagination-prev');
-        const nextBtn = container.querySelector('.pagination-next');
-        const numbersDiv = container.querySelector('.pagination-numbers');
-        const currentStartSpan = container.querySelector('.current-start');
-        const currentEndSpan = container.querySelector('.current-end');
-        let currentPage = 1;
-        const totalPages = Math.ceil(rows.length / ITEMS_PER_PAGE);
-
-        function showPage(page) {
-            currentPage = page;
-            const start = (page - 1) * ITEMS_PER_PAGE;
-            const end = start + ITEMS_PER_PAGE;
-            rows.forEach((row, index) => {
-                if (index >= start && index < end) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            currentStartSpan.textContent = start + 1;
-            currentEndSpan.textContent = Math.min(end, rows.length);
-            prevBtn.disabled = page === 1;
-            nextBtn.disabled = page === totalPages;
-            renderPageNumbers();
-        }
-
-        function renderPageNumbers() {
-            numbersDiv.innerHTML = '';
-            const maxVisible = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-            if (endPage - startPage < maxVisible - 1) {
-                startPage = Math.max(1, endPage - maxVisible + 1);
-            }
-            for (let i = startPage; i <= endPage; i++) {
-                const btn = document.createElement('button');
-                btn.textContent = i;
-                btn.className = `px-3 py-1 rounded-lg text-sm ${
-                    i === currentPage 
-                        ? 'bg-primary text-white dark:bg-primary-neon' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`;
-                btn.onclick = () => showPage(i);
-                numbersDiv.appendChild(btn);
-            }
-        }
-
-        prevBtn.onclick = () => { if (currentPage > 1) showPage(currentPage - 1); };
-        nextBtn.onclick = () => { if (currentPage < totalPages) showPage(currentPage + 1); };
-        showPage(1);
-    }
-
+    // Búsqueda individual por archivo
     document.querySelectorAll('.search-file').forEach(input => {
         input.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
@@ -680,6 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Búsqueda global
     const globalSearch = document.getElementById('searchInputGlobal');
     const globalFilter = document.getElementById('statusFilterGlobal');
 
@@ -698,12 +602,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (globalSearch) {
-        globalSearch.addEventListener('input', filterAllTables);
-    }
-    if (globalFilter) {
-        globalFilter.addEventListener('change', filterAllTables);
-    }
+    if (globalSearch) globalSearch.addEventListener('input', filterAllTables);
+    if (globalFilter) globalFilter.addEventListener('change', filterAllTables);
+
+    // Cerrar modales con clic fuera o Escape
+    [document.getElementById('modalDescarga'), document.getElementById('modalEliminar')].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    modal.id === 'modalDescarga' ? cerrarModalDescarga() : cerrarModalEliminar();
+                }
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalDescarga();
+            cerrarModalEliminar();
+        }
+    });
 });
 </script>
 {% endblock %}

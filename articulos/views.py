@@ -13,22 +13,113 @@ import bibtexparser
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.customization import convert_to_unicode
 
-
 from .models import Articulo, ArchivoSubida, HistorialArticulo
 from pymetanalis.models import Proyecto, UsuarioProyecto
 from .utils import ExtractorTexto
 
 
 @login_required
+def seleccionar_proyecto_articulos(request):
+    """Vista para seleccionar un proyecto antes de gestionar artículos"""
+    
+    # Obtener proyectos donde el usuario participa
+    usuario_proyectos = UsuarioProyecto.objects.filter(
+        usuario=request.user
+    ).select_related('proyecto').order_by('-fecha_incorporacion')
+    
+    # Si no tiene proyectos, redirigir a buscar proyectos
+    if not usuario_proyectos.exists():
+        messages.info(
+            request, 
+            'No tienes proyectos asignados. Busca proyectos para unirte o crea uno nuevo.'
+        )
+        return redirect('buscar_proyectos')
+    
+    # Filtros (igual que mis_proyectos)
+    filtro_rol = request.GET.get('rol', '')
+    filtro_estado = request.GET.get('estado', '')
+    filtro_categoria = request.GET.get('categoria', '')
+    busqueda = request.GET.get('q', '')
+    
+    if filtro_rol:
+        usuario_proyectos = usuario_proyectos.filter(rol_proyecto=filtro_rol)
+    
+    proyectos_ids = usuario_proyectos.values_list('proyecto_id', flat=True)
+    proyectos = Proyecto.objects.filter(id__in=proyectos_ids)
+    
+    if filtro_estado:
+        proyectos = proyectos.filter(estado=filtro_estado)
+    
+    if filtro_categoria:
+        proyectos = proyectos.filter(categoria=filtro_categoria)
+    
+    if busqueda:
+        proyectos = proyectos.filter(
+            Q(nombre__icontains=busqueda) |
+            Q(usuario_creador__username__icontains=busqueda) |
+            Q(usuario_creador__first_name__icontains=busqueda) |
+            Q(usuario_creador__last_name__icontains=busqueda)
+        )
+    
+    # Agregar información del rol del usuario en cada proyecto
+    proyectos_data = []
+    for proyecto in proyectos:
+        usuario_proyecto = usuario_proyectos.filter(proyecto=proyecto).first()
+        
+        # Contar artículos del proyecto
+        total_articulos = Articulo.objects.filter(proyecto=proyecto).count()
+        
+        proyectos_data.append({
+            'proyecto': proyecto,
+            'rol': usuario_proyecto.rol_proyecto if usuario_proyecto else None,
+            'puede_invitar': usuario_proyecto.puede_invitar if usuario_proyecto else False,
+            'total_articulos': total_articulos,
+            'progreso': (proyecto.articulos_trabajados / proyecto.total_articulos * 100) 
+                        if proyecto.total_articulos > 0 else 0
+        })
+    
+    # Paginación
+    paginator = Paginator(proyectos_data, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'filtro_rol': filtro_rol,
+        'filtro_estado': filtro_estado,
+        'filtro_categoria': filtro_categoria,
+        'busqueda': busqueda,
+        'roles': UsuarioProyecto.ROL_PROYECTO_CHOICES,
+        'estados': Proyecto.ESTADO_CHOICES,
+        'categorias': Proyecto.CATEGORIA_CHOICES,
+        'es_seleccion_articulos': True,
+    }
+    
+    return render(request, 'seleccionar_proyecto.html', context)
+
+
+@login_required
 def ver_articulos(request, proyecto_id):
     """Vista para que administradores e investigadores vean los artículos de un proyecto."""
-    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    except (Proyecto.DoesNotExist, ValueError):
+        messages.error(request, 'Proyecto no encontrado.')
+        return redirect('articulos:seleccionar_proyecto')
 
     # Verificar rol del usuario
     usuario_proyecto = UsuarioProyecto.objects.filter(
         usuario=request.user,
         proyecto=proyecto
     ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes acceso a este proyecto.')
+        return redirect('articulos:seleccionar_proyecto')
+    
+    # ✅ GUARDAR PROYECTO ACTUAL EN SESIÓN
+    request.session['proyecto_actual_id'] = proyecto.id
+    request.session.modified = True
 
     # Limpiar COMPLETAMENTE la sesión de archivos subidos
     if 'archivos_sesion' in request.session:
@@ -36,16 +127,14 @@ def ver_articulos(request, proyecto_id):
             del request.session['archivos_sesion']
         except KeyError:
             pass
-    
-    # Forzar el guardado de la sesión
-    request.session.modified = True
 
     # Obtener artículos del proyecto
     articulos = Articulo.objects.filter(proyecto=proyecto).order_by('-fecha_carga')
 
     context = {
         'proyecto': proyecto,
-        'articulos': articulos
+        'articulos': articulos,
+        'usuario_proyecto': usuario_proyecto,
     }
 
     return render(request, 'ver_articulos.html', context)
@@ -64,7 +153,7 @@ def descargar_articulo(request, articulo_id):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para acceder a este artículo.')
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
     
     # Crear el contenido BibTeX
     bibtex_content = articulo.bibtex_original
@@ -92,9 +181,13 @@ def descargar_archivo_bib(request, archivo_nombre):
     
     if not proyecto_id:
         messages.error(request, 'Proyecto no especificado.')
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
     
-    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    except (Proyecto.DoesNotExist, ValueError):
+        messages.error(request, 'Proyecto no encontrado.')
+        return redirect('articulos:seleccionar_proyecto')
     
     # Verificar acceso
     usuario_proyecto = UsuarioProyecto.objects.filter(
@@ -104,7 +197,7 @@ def descargar_archivo_bib(request, archivo_nombre):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para acceder a este proyecto.')
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
     
     # Obtener todos los artículos del archivo
     articulos = Articulo.objects.filter(
@@ -133,7 +226,7 @@ def eliminar_articulo(request, articulo_id):
     """Vista para eliminar un artículo."""
     if request.method != 'POST':
         messages.error(request, 'Método no permitido.')
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
     
     articulo = get_object_or_404(Articulo, id=articulo_id)
     proyecto_id = articulo.proyecto.id
@@ -146,7 +239,7 @@ def eliminar_articulo(request, articulo_id):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para eliminar este artículo.')
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
 
     # Guardar información antes de eliminar
     titulo_articulo = articulo.titulo
@@ -171,7 +264,11 @@ def eliminar_articulo(request, articulo_id):
 @login_required
 def agregar_articulo(request, proyecto_id):
     """Vista para agregar un nuevo artículo al proyecto."""
-    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    except (Proyecto.DoesNotExist, ValueError):
+        messages.error(request, 'Proyecto no encontrado.')
+        return redirect('articulos:seleccionar_proyecto')
     
     # Verificar que el usuario tiene acceso al proyecto
     usuario_proyecto = UsuarioProyecto.objects.filter(
@@ -181,31 +278,45 @@ def agregar_articulo(request, proyecto_id):
     
     if not usuario_proyecto:
         messages.error(request, 'No tienes permiso para agregar artículos a este proyecto.')
-        return redirect('core:home')  # 🔹 Aquí faltaba el return
+        return redirect('articulos:seleccionar_proyecto')
     
     if request.method == 'POST':
-        # Aquí iría la lógica para guardar el nuevo artículo
-        # Ejemplo:
         titulo = request.POST.get('titulo')
         if titulo:
             Articulo.objects.create(
                 proyecto=proyecto,
                 usuario_carga=request.user,
                 titulo=titulo,
-                bibtex_key=f"{titulo[:20]}",
-                bibtex_original="@article{...}"
+                bibtex_key=f"{titulo[:20]}_{timezone.now().timestamp()}",
+                bibtex_original="@article{...}",
+                archivo_bib=None  # 🔹 CAMBIO: Artículos manuales no tienen archivo origen
             )
             messages.success(request, 'Artículo agregado correctamente.')
             return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
-    # Si es GET, mostrar el formulario
+    
     return render(request, 'indv_articulo.html', {'proyecto': proyecto})
 
+
+@login_required
 def subir_archivo(request, proyecto_id):
     try:
         proyecto = Proyecto.objects.get(id=proyecto_id)
-    except Proyecto.DoesNotExist:
+    except (Proyecto.DoesNotExist, ValueError):
         messages.error(request, "El proyecto no existe.")
-        return redirect('core:home')
+        return redirect('articulos:seleccionar_proyecto')
+    
+    # Verificar acceso del usuario
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=proyecto
+    ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes acceso a este proyecto.')
+        return redirect('articulos:seleccionar_proyecto')
+    
+    # ✅ GUARDAR PROYECTO ACTUAL EN SESIÓN
+    request.session['proyecto_actual_id'] = proyecto.id
     
     # Inicializar lista de archivos de la sesión si no existe o está vacía
     if 'archivos_sesion' not in request.session or request.session['archivos_sesion'] is None:
@@ -299,7 +410,7 @@ def subir_archivo(request, proyecto_id):
                         if isinstance(titulo, str):
                             titulo = titulo.strip()
                         
-                        # Guardar cada artículo en el modelo Articulo
+                        # 🔹 CAMBIO IMPORTANTE: Asignar archivo_bib con el nombre del archivo
                         articulo = Articulo(
                             proyecto=proyecto,
                             usuario_carga=request.user,
@@ -307,7 +418,8 @@ def subir_archivo(request, proyecto_id):
                             titulo=titulo[:500],  # Limitar a 500 caracteres
                             doi=entry.get('doi', None),
                             bibtex_original=bibtex_str,
-                            metadata_completos=entry
+                            metadata_completos=entry,
+                            archivo_bib=archivo.name  # 🔹 Aquí está el cambio clave
                         )
                         articulo.save()
                         cantidad_articulos_procesados += 1
@@ -366,15 +478,25 @@ def subir_archivo(request, proyecto_id):
     })
 
 
+@login_required
 def visualizar_articulos(request, archivo_id):
     """Vista para mostrar todos los artículos de un archivo .bib subido"""
     archivo = get_object_or_404(ArchivoSubida, id=archivo_id)
     
+    # Verificar acceso
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=archivo.proyecto
+    ).first()
+    
+    if not usuario_proyecto:
+        messages.error(request, 'No tienes acceso a este proyecto.')
+        return redirect('articulos:seleccionar_proyecto')
+    
     # Obtener todos los artículos asociados a este archivo específico
     articulos = Articulo.objects.filter(
         proyecto=archivo.proyecto,
-        usuario_carga=archivo.usuario,
-        fecha_carga__gte=archivo.fecha_subida
+        archivo_bib=archivo.nombre_archivo
     ).order_by('-fecha_carga')
     
     return render(request, 'visualizar_articulos.html', {

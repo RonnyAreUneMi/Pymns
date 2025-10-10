@@ -10,6 +10,10 @@ class Articulo(models.Model):
     doi = models.CharField(max_length=200, null=True, blank=True)
     bibtex_original = models.TextField()
     metadata_completos = models.JSONField(null=True, blank=True)
+    
+    # 🔹 NUEVO: Campo para rastrear el origen
+    archivo_bib = models.CharField(max_length=255, null=True, blank=True, help_text="Nombre del archivo .bib de origen")
+    
     estado = models.CharField(
         max_length=20,
         choices=[

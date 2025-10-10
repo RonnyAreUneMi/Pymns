@@ -39,6 +39,228 @@
             transition: all 0.3s ease;
         }
         
+        /* ============================================
+           SISTEMA DE LOADER PERSONALIZADO
+           ============================================ */
+        
+        #pageLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .dark #pageLoader {
+            background: rgba(26, 26, 26, 0.75);
+        }
+
+        #pageLoader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Animación del spinner principal */
+        .loader-spinner {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .loader-circle {
+            position: absolute;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+        }
+
+        .loader-circle:nth-child(1) {
+            width: 100%;
+            height: 100%;
+            border-top-color: #FF896C;
+            border-right-color: rgba(255, 137, 108, 0.2);
+            box-shadow: 0 0 15px rgba(255, 137, 108, 0.3);
+        }
+
+        .loader-circle:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-top-color: #FF5722;
+            border-right-color: rgba(255, 87, 34, 0.2);
+            animation-delay: -0.5s;
+            box-shadow: 0 0 12px rgba(255, 87, 34, 0.3);
+        }
+
+        .loader-circle:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            border-top-color: #FF6B35;
+            border-right-color: rgba(255, 107, 53, 0.2);
+            animation-delay: -1s;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .dark .loader-circle:nth-child(1) {
+            border-top-color: #FF6B35;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .dark .loader-circle:nth-child(2) {
+            border-top-color: #FF4500;
+            box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+        }
+
+        .dark .loader-circle:nth-child(3) {
+            border-top-color: #FF896C;
+            box-shadow: 0 0 12px rgba(255, 137, 108, 0.5);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Texto del loader */
+        .loader-text {
+            color: #333333;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            animation: fadeInOut 2s ease-in-out infinite;
+        }
+
+        .dark .loader-text {
+            color: #ffffff;
+        }
+
+        .loader-subtext {
+            color: #666666;
+            font-size: 0.875rem;
+            text-align: center;
+            max-width: 400px;
+            padding: 0 2rem;
+        }
+
+        .dark .loader-subtext {
+            color: #cccccc;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Barra de progreso */
+        .loader-progress-container {
+            width: 280px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+
+        .dark .loader-progress-container {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .loader-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #FF896C, #FF5722, #FF6B35);
+            width: 0%;
+            animation: progress 2.5s ease-in-out infinite;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 137, 108, 0.5);
+            position: relative;
+        }
+
+        .dark .loader-progress-bar {
+            background: linear-gradient(90deg, #FF6B35, #FF4500, #FF896C);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.7);
+        }
+
+        .loader-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.2s infinite;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+            50% {
+                width: 70%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Logo animado */
+        .loader-logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1.5rem;
+            animation: bounce 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 12px rgba(255, 137, 108, 0.4));
+        }
+
+        .dark .loader-logo {
+            filter: drop-shadow(0 4px 15px rgba(255, 107, 53, 0.6));
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-15px) scale(1.05);
+            }
+        }
+
+        /* ============================================
+           ESTILOS EXISTENTES
+           ============================================ */
+        
         .sidebar-hidden {
             transform: translateX(-100%) !important;
         }
@@ -404,6 +626,32 @@
 </head>
 <body class="bg-bg-main dark:bg-bg-main-dark text-text-main dark:text-text-main-dark min-h-screen">
     
+    <!-- ============================================
+         LOADER DE PÁGINA PERSONALIZADO
+         ============================================ -->
+    <div id="pageLoader">
+        <img src="{% static 'img/hola3.png' %}" alt="PM Logo" class="loader-logo" 
+             onerror="this.style.display='none';">
+        
+        <div class="loader-spinner">
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+        </div>
+        
+        <h2 class="loader-text" id="loaderTitle">
+            {% block loader_title %}Cargando...{% endblock %}
+        </h2>
+        
+        <p class="loader-subtext" id="loaderMessage">
+            {% block loader_message %}Preparando tu experiencia{% endblock %}
+        </p>
+        
+        <div class="loader-progress-container">
+            <div class="loader-progress-bar"></div>
+        </div>
+    </div>
+    
     {% block body_content %}
     <div class="flex min-h-screen">
         <!-- Sidebar -->
@@ -480,7 +728,7 @@
 
                             <div class="menu-section">
                                 <p class="menu-section-title">Edición de artículos</p>
-                                <a href="#" class="flex items-center px-4 py-3 text-white {% if request.resolver_match.url_name == 'home' %}bg-white bg-opacity-20{% else %}hover:bg-white hover:bg-opacity-10{% endif %} rounded-lg transition-all duration-200">
+                                <a href="{% url 'articulos:seleccionar_proyecto' %}" class="flex items-center px-4 py-3 text-white {% if request.resolver_match.url_name == 'home' %}bg-white bg-opacity-20{% else %}hover:bg-white hover:bg-opacity-10{% endif %} rounded-lg transition-all duration-200">
                                     <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                                     </svg>
@@ -721,7 +969,7 @@
                                                         <div class="text-xs text-gray-400 dark:text-gray-500 capitalize">{{ user.profile.role.name }}</div>
                                                     {% endif %}
                                                 </div>
-                                                <a href="{#}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                                     <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
                                                         <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
                                                     </svg>
@@ -831,6 +1079,63 @@
 
     {% block extra_js %}
     <script>
+        // ============================================
+        // SISTEMA DE LOADER PERSONALIZADO
+        // ============================================
+        
+        // Configuración del loader
+        window.PageLoader = {
+            loader: null,
+            loaderTitle: null,
+            loaderMessage: null,
+            
+            init: function() {
+                this.loader = document.getElementById('pageLoader');
+                this.loaderTitle = document.getElementById('loaderTitle');
+                this.loaderMessage = document.getElementById('loaderMessage');
+            },
+            
+            show: function(title, message) {
+                if (this.loader) {
+                    if (title) this.loaderTitle.textContent = title;
+                    if (message) this.loaderMessage.textContent = message;
+                    this.loader.classList.remove('hidden');
+                }
+            },
+            
+            hide: function() {
+                if (this.loader) {
+                    setTimeout(() => {
+                        this.loader.classList.add('hidden');
+                    }, 500);
+                }
+            },
+            
+            setMessages: function(title, message) {
+                if (this.loaderTitle) this.loaderTitle.textContent = title;
+                if (this.loaderMessage) this.loaderMessage.textContent = message;
+            }
+        };
+
+        // Inicializar el loader cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            PageLoader.init();
+            
+            // Ocultar el loader cuando la página termine de cargar
+            window.addEventListener('load', function() {
+                PageLoader.hide();
+            });
+        });
+
+        // Mostrar el loader antes de navegar a otra página
+        window.addEventListener('beforeunload', function() {
+            PageLoader.show('Cargando...', 'Un momento por favor');
+        });
+
+        // ============================================
+        // FUNCIONES EXISTENTES
+        // ============================================
+        
         // Función para cerrar mensajes
         function closeMessage(button) {
             const messageElement = button.closest('.message-alert');
@@ -1016,7 +1321,6 @@
             const markAllAsReadBtn = document.getElementById('markAllAsRead');
             const notificationTemplate = document.getElementById('notificationTemplate');
 
-            // Toggle dropdown
             notificationsButton?.addEventListener('click', function(e) {
                 e.stopPropagation();
                 notificationsDropdown.classList.toggle('hidden');
@@ -1026,7 +1330,6 @@
                 }
             });
 
-            // Cerrar al hacer click fuera
             document.addEventListener('click', function(e) {
                 if (notificationsDropdown && 
                     !notificationsDropdown.contains(e.target) && 
@@ -1035,14 +1338,12 @@
                 }
             });
 
-            // Cerrar con ESC
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && !notificationsDropdown.classList.contains('hidden')) {
                     notificationsDropdown.classList.add('hidden');
                 }
             });
 
-            // Marcar todas como leídas
             markAllAsReadBtn?.addEventListener('click', function() {
                 marcarTodasComoLeidas();
             });
@@ -1187,7 +1488,6 @@
                 return cookieValue;
             }
 
-            // Polling cada 30 segundos
             setInterval(function() {
                 fetch('/notificaciones/contar/', {
                     method: 'GET',
@@ -1204,7 +1504,6 @@
                 });
             }, 30000);
 
-            // Cargar contador inicial
             if (notificationBadge) {
                 fetch('/notificaciones/contar/', {
                     method: 'GET',
