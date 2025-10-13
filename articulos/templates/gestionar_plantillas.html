@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Plantillas - {{ proyecto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Breadcrumb -->
+    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+        <a href="{% url 'core:home' %}" class="hover:text-primary dark:hover:text-primary-neon">Inicio</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="{% url 'mis_proyectos' %}" class="hover:text-primary dark:hover:text-primary-neon">Mis Proyectos</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="{% url 'detalle_proyecto' proyecto.id %}" class="hover:text-primary dark:hover:text-primary-neon">{{ proyecto.nombre }}</a>
+        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-gray-700 dark:text-gray-300">Gestionar Plantillas</span>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+        <div class="p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3 mb-2">
+                        <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                        </svg>
+                        <span>Gestionar Plantillas</span>
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-400">Crea conjuntos de campos para asignar rápidamente</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'detalle_proyecto' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        <span>Volver</span>
+                    </a>
+                    <button onclick="abrirModalNuevaPlantilla()" class="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-bold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Nueva Plantilla</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Plantillas -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for plantilla in plantillas %}
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-200">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ plantilla.nombre }}</h3>
+                            {% if plantilla.es_predeterminada %}
+                            <span class="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900 dark:bg-opacity-30 text-yellow-800 dark:text-yellow-300 rounded-full flex items-center">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                Predeterminada
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            {{ plantilla.descripcion|default:"Sin descripción" }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="flex items-center space-x-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ plantilla.num_campos }} campos</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ plantilla.creado_por.get_full_name|default:plantilla.creado_por.username }}</span>
+                    </div>
+                </div>
+
+                <!-- Campos incluidos (muestra los primeros 3) -->
+                <div class="mb-4">
+                    <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Campos incluidos:</h4>
+                    <div class="space-y-1">
+                        {% for campo in plantilla.campos.all|slice:":3" %}
+                        <div class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                            <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="truncate">{{ campo.nombre }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if plantilla.num_campos > 3 %}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 pl-6">+ {{ plantilla.num_campos|add:"-3" }} más...</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="verDetallesPlantilla({{ plantilla.id }})" class="flex-1 px-4 py-2 bg-primary bg-opacity-10 dark:bg-primary-neon dark:bg-opacity-20 text-primary dark:text-primary-neon rounded-lg hover:bg-opacity-20 transition-all text-sm font-medium flex items-center justify-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        <span>Ver</span>
+                    </button>
+                    <button onclick="eliminarPlantilla({{ plantilla.id }}, '{{ plantilla.nombre }}')" class="px-4 py-2 bg-red-50 dark:bg-red-900 dark:bg-opacity-20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 dark:hover:bg-opacity-30 transition-all text-sm font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                    Creado el {{ plantilla.fecha_creacion|date:"d/m/Y" }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <svg class="w-20 h-20 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+            </svg>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay plantillas creadas</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Crea tu primera plantilla para agilizar la asignación de tareas</p>
+            <button onclick="abrirModalNuevaPlantilla()" class="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 font-bold inline-flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>Crear Primera Plantilla</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Nueva Plantilla -->
+<div id="modalNuevaPlantilla" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Crear Nueva Plantilla</h3>
+                <button onclick="cerrarModalNuevaPlantilla()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <form method="POST" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            <!-- Nombre -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Nombre de la Plantilla <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="nombre" required maxlength="200"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Ej: Plantilla Metaanálisis Básico">
+            </div>
+
+            <!-- Descripción -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Descripción
+                </label>
+                <textarea name="descripcion" rows="2"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Describe el propósito de esta plantilla..."></textarea>
+            </div>
+
+            <!-- Predeterminada -->
+            <div class="flex items-center">
+                <input type="checkbox" name="es_predeterminada" id="es_predeterminada"
+                    class="w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded">
+                <label for="es_predeterminada" class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Marcar como plantilla predeterminada
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Se aplicará automáticamente a nuevos artículos</p>
+                </label>
+            </div>
+
+            <!-- Selección de Campos -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Seleccionar Campos <span class="text-red-500">*</span>
+                </label>
+                
+                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-96 overflow-y-auto bg-gray-50 dark:bg-gray-700">
+                    {% if campos_disponibles %}
+                        <div class="space-y-4">
+                            {% regroup campos_disponibles by get_categoria_display as categorias %}
+                            {% for categoria in categorias %}
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center">
+                                            <span class="w-2 h-2 rounded-full bg-primary dark:bg-primary-neon mr-2"></span>
+                                            {{ categoria.grouper }}
+                                        </h4>
+                                        <button type="button" onclick="seleccionarCategoria('{{ categoria.grouper }}')" class="text-xs text-primary dark:text-primary-neon hover:underline">
+                                            Seleccionar todos
+                                        </button>
+                                    </div>
+                                    <div class="space-y-2 ml-4">
+                                        {% for campo in categoria.list %}
+                                        <label class="flex items-start p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer" data-categoria="{{ categoria.grouper }}">
+                                            <input type="checkbox" name="campos" value="{{ campo.id }}" class="mt-1 w-4 h-4 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded campo-checkbox">
+                                            <div class="ml-3 flex-1">
+                                                <h5 class="font-medium text-gray-900 dark:text-white">{{ campo.nombre }}</h5>
+                                                {% if campo.descripcion %}
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ campo.descripcion }}</p>
+                                                {% endif %}
+                                                <div class="flex items-center space-x-2 mt-1">
+                                                    <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">{{ campo.get_tipo_dato_display }}</span>
+                                                    {% if campo.proyecto %}
+                                                        <span class="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 text-purple-600 dark:text-purple-400 rounded">Personalizado</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <p>No hay campos disponibles</p>
+                            <a href="{% url 'articulos:gestionar_campos' proyecto.id %}" class="text-sm text-primary dark:text-primary-neon hover:underline mt-2 inline-block">Crear campos primero</a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div id="contador-campos" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-semibold" id="num-campos-seleccionados">0</span> campos seleccionados
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" onclick="cerrarModalNuevaPlantilla()" 
+                    class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium">
+                    Cancelar
+                </button>
+                <button type="submit" id="btn-crear-plantilla"
+                    class="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 font-bold flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Crear Plantilla</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles Plantilla -->
+<div id="modalDetallesPlantilla" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 id="titulo-detalle" class="text-2xl font-bold text-gray-900 dark:text-white"></h3>
+                <button onclick="cerrarModalDetalles()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div id="contenido-detalle" class="p-6">
+            <!-- Se llenará dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+const csrftoken = getCookie('csrftoken');
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function abrirModalNuevaPlantilla() {
+    document.getElementById('modalNuevaPlantilla').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    actualizarContador();
+}
+
+function cerrarModalNuevaPlantilla() {
+    document.getElementById('modalNuevaPlantilla').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function cerrarModalDetalles() {
+    document.getElementById('modalDetallesPlantilla').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function seleccionarCategoria(categoria) {
+    const checkboxes = document.querySelectorAll(`label[data-categoria="${categoria}"] input[type="checkbox"]`);
+    const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+    
+    checkboxes.forEach(cb => {
+        cb.checked = !todosSeleccionados;
+    });
+    
+    actualizarContador();
+}
+
+function actualizarContador() {
+    const checkboxes = document.querySelectorAll('.campo-checkbox:checked');
+    const contador = document.getElementById('num-campos-seleccionados');
+    const btnCrear = document.getElementById('btn-crear-plantilla');
+    
+    contador.textContent = checkboxes.length;
+    
+    if (checkboxes.length === 0) {
+        btnCrear.disabled = true;
+        btnCrear.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        btnCrear.disabled = false;
+        btnCrear.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+// Actualizar contador cuando se hace clic en un checkbox
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('campo-checkbox')) {
+        actualizarContador();
+    }
+});
+
+function verDetallesPlantilla(plantillaId) {
+    // En una implementación real, harías un fetch para obtener los detalles
+    // Por ahora solo mostramos un mensaje
+    Swal.fire({
+        title: 'Detalles de Plantilla',
+        text: 'Aquí se mostrarían todos los campos de la plantilla',
+        icon: 'info',
+        confirmButtonText: 'Cerrar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            content: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg transition-all duration-200'
+        }
+    });
+}
+
+function eliminarPlantilla(plantillaId, nombrePlantilla) {
+    Swal.fire({
+        title: '¿Eliminar plantilla?',
+        html: `¿Estás seguro de que deseas eliminar la plantilla <strong>"${nombrePlantilla}"</strong>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            htmlContainer: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200',
+            cancelButton: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-200'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/articulos/plantilla/${plantillaId}/eliminar/`;
+        }
+    });
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalNuevaPlantilla();
+        cerrarModalDetalles();
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalNuevaPlantilla').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalNuevaPlantilla();
+    }
+});
+
+document.getElementById('modalDetallesPlantilla').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalDetalles();
+    }
+});
+
+// Validar formulario antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const camposSeleccionados = document.querySelectorAll('.campo-checkbox:checked');
+    
+    if (camposSeleccionados.length === 0) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Error',
+            text: 'Debes seleccionar al menos un campo para la plantilla',
+            icon: 'error',
+            confirmButtonText: 'Entendido',
+            customClass: {
+                popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+                title: 'text-gray-900 dark:text-white font-bold',
+                content: 'text-gray-600 dark:text-gray-400',
+                confirmButton: 'px-4 py-2 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg transition-all duration-200'
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
