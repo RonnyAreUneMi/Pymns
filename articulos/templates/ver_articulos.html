@@ -225,7 +225,7 @@
                                                     </svg>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
-                                                    <a href="#" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary dark:hover:text-primary-neon line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
+                                                    <a href="{% url 'articulos:workspace_articulo' articulo.id %}" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary dark:hover:text-primary-neon line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
                                                 </div>
                                             </div>
                                         </td>
@@ -330,7 +330,7 @@
                                         </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <a href="#" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
+                                        <a href="{% url 'articulos:workspace_articulo' articulo.id %}" class="text-sm font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 line-clamp-2 transition-colors">{{ articulo.titulo }}</a>
                                     </div>
                                 </div>
                             </td>

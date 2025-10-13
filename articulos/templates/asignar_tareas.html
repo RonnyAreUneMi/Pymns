@@ -222,8 +222,8 @@
                                         </h4>
                                         <div class="space-y-2 ml-4">
                                             {% for campo in categoria.list %}
-                                            <label class="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                                                <input type="checkbox" name="campos" value="{{ campo.id }}" class="mt-1 w-4 h-4 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded">
+                                            <label class="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer campo-label">
+                                                <input type="checkbox" name="campos" value="{{ campo.id }}" class="mt-1 w-4 h-4 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded campo-checkbox" onchange="actualizarCamposAsignados()">
                                                 <div class="ml-3 flex-1">
                                                     <h5 class="font-medium text-gray-900 dark:text-white">{{ campo.nombre }}</h5>
                                                     {% if campo.descripcion %}
@@ -267,6 +267,7 @@
 const csrftoken = getCookie('csrftoken');
 let usuarioSeleccionadoId = null;
 let articulosData = [];
+let camposAsignadosActuales = [];
 
 function getCookie(name) {
     let cookieValue = null;
@@ -349,7 +350,7 @@ function mostrarArticulos(articulos) {
     
     container.innerHTML = articulos.map(art => `
         <label class="flex items-start p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-            <input type="checkbox" name="articulos" value="${art.id}" class="mt-1 w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded articulo-checkbox">
+            <input type="checkbox" name="articulos" value="${art.id}" class="mt-1 w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded articulo-checkbox" onchange="actualizarCamposAsignados()">
             <div class="ml-4 flex-1">
                 <div class="flex items-start justify-between">
                     <h4 class="font-medium text-gray-900 dark:text-white line-clamp-2">${art.titulo}</h4>
@@ -363,22 +364,100 @@ function mostrarArticulos(articulos) {
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Cargado: ${art.fecha_carga}</p>
                 ${art.tiene_campos ? `
-                    <div class="mt-2 flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="text-xs text-gray-600 dark:text-gray-400">Ya tiene ${art.campos_asignados.length} campo(s) asignado(s)</span>
+                    <div class="mt-2">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">${art.campos_asignados.length} campo(s) asignado(s):</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            ${art.campos_asignados.map(campo => `
+                                <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300 rounded-full">
+                                    ${campo.nombre}
+                                </span>
+                            `).join('')}
+                        </div>
                     </div>
                 ` : ''}
             </div>
         </label>
     `).join('');
+    
+    // Actualizar vista de campos asignados después de mostrar artículos
+    actualizarCamposAsignados();
 }
 
 function seleccionarTodos() {
     const checkboxes = document.querySelectorAll('.articulo-checkbox');
     const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
     checkboxes.forEach(cb => cb.checked = !todosSeleccionados);
+    actualizarCamposAsignados();
+}
+
+function actualizarCamposAsignados() {
+    const articulosSeleccionados = Array.from(document.querySelectorAll('.articulo-checkbox:checked')).map(cb => cb.value);
+    
+    if (articulosSeleccionados.length === 0) {
+        camposAsignadosActuales = [];
+        marcarCamposAsignados();
+        return;
+    }
+    
+    // Hacer petición AJAX para obtener campos asignados
+    fetch(`/articulos/proyecto/{{ proyecto.id }}/campos-asignados/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ articulos_ids: articulosSeleccionados })
+    })
+    .then(response => response.json())
+    .then(data => {
+        camposAsignadosActuales = data.campos_asignados || [];
+        marcarCamposAsignados();
+    })
+    .catch(error => {
+        console.error('Error al obtener campos asignados:', error);
+        camposAsignadosActuales = [];
+        marcarCamposAsignados();
+    });
+}
+
+function marcarCamposAsignados() {
+    // Limpiar marcas anteriores
+    document.querySelectorAll('.campo-ya-asignado').forEach(el => el.remove());
+    document.querySelectorAll('.campo-label').forEach(el => {
+        el.classList.remove('bg-yellow-50', 'dark:bg-yellow-900', 'dark:bg-opacity-20', 'border-yellow-300', 'dark:border-yellow-700', 'border-2');
+    });
+    
+    if (camposAsignadosActuales.length === 0) return;
+    
+    // Marcar campos que ya están asignados
+    camposAsignadosActuales.forEach(campo => {
+        const checkbox = document.querySelector(`input[name="campos"][value="${campo.id}"]`);
+        if (checkbox) {
+            const container = checkbox.closest('.campo-label');
+            container.classList.add('bg-yellow-50', 'dark:bg-yellow-900', 'dark:bg-opacity-20', 'border-yellow-300', 'dark:border-yellow-700', 'border-2');
+            
+            // Agregar indicador visual
+            const indicator = document.createElement('div');
+            indicator.className = 'campo-ya-asignado mt-2 flex items-center space-x-1';
+            indicator.innerHTML = `
+                <svg class="w-3 h-3 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
+                    Ya asignado en ${campo.cantidad_articulos}/${campo.total_articulos} artículo(s) - Click para desasignar
+                </span>
+            `;
+            
+            const divContenido = container.querySelector('div:last-child');
+            divContenido.appendChild(indicator);
+        }
+    });
 }
 
 function mostrarTab(tab) {
@@ -400,6 +479,7 @@ function mostrarTab(tab) {
 function limpiarSeleccion() {
     usuarioSeleccionadoId = null;
     articulosData = [];
+    camposAsignadosActuales = [];
     
     document.querySelectorAll('.colaborador-item').forEach(item => {
         item.classList.remove('bg-primary', 'bg-opacity-10', 'dark:bg-primary-neon', 'dark:bg-opacity-20', 'border-l-4', 'border-primary', 'dark:border-primary-neon');
@@ -411,6 +491,9 @@ function limpiarSeleccion() {
     // Limpiar selecciones
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
+    
+    // Limpiar marcas de campos asignados
+    marcarCamposAsignados();
 }
 
 function asignarTareas() {
@@ -438,6 +521,27 @@ function asignarTareas() {
         return;
     }
     
+    // Determinar acción: asignar o desasignar
+    let accion = 'asignar';
+    let camposMarcados = usarPlantilla ? [] : camposSeleccionados;
+    
+    // Si hay campos ya asignados en la selección, preguntar acción
+    if (!usarPlantilla && camposAsignadosActuales.length > 0) {
+        const camposYaAsignados = camposAsignadosActuales.filter(c => camposMarcados.includes(c.id.toString()));
+        if (camposYaAsignados.length > 0) {
+            const mensaje = `⚠️ ATENCIÓN: Has seleccionado ${camposYaAsignados.length} campo(s) que ya están asignados a algunos artículos.\n\n` +
+                           `Campos:\n${camposYaAsignados.map(c => `• ${c.nombre} (en ${c.cantidad_articulos}/${c.total_articulos} artículos)`).join('\n')}\n\n` +
+                           `¿Qué deseas hacer?\n\n` +
+                           `✅ ACEPTAR = DESASIGNAR estos campos de los artículos seleccionados\n` +
+                           `❌ CANCELAR = Volver y cambiar la selección`;
+            
+            if (!confirm(mensaje)) {
+                return;
+            }
+            accion = 'desasignar';
+        }
+    }
+    
     // Deshabilitar botón
     const btnAsignar = document.getElementById('btn-asignar');
     btnAsignar.disabled = true;
@@ -446,7 +550,7 @@ function asignarTareas() {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <span>Asignando...</span>
+        <span>${accion === 'desasignar' ? 'Desasignando...' : 'Asignando...'}</span>
     `;
     
     // Preparar datos
@@ -454,7 +558,8 @@ function asignarTareas() {
         articulos_ids: articulosSeleccionados,
         usar_plantilla: usarPlantilla,
         plantilla_id: plantillaSeleccionada ? plantillaSeleccionada.value : null,
-        campos_ids: camposSeleccionados
+        campos_ids: camposSeleccionados,
+        accion: accion
     };
     
     // Enviar solicitud
@@ -472,16 +577,18 @@ function asignarTareas() {
         if (data.success) {
             mostrarNotificacion(data.mensaje, 'success');
             
-            // Recargar artículos después de 1 segundo
+            // Recargar artículos después de 1.5 segundos
             setTimeout(() => {
                 cargarArticulos(usuarioSeleccionadoId);
                 
                 // Limpiar selecciones
                 document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
                 document.querySelectorAll('input[name="plantilla"]').forEach(rb => rb.checked = false);
+                camposAsignadosActuales = [];
+                marcarCamposAsignados();
             }, 1500);
         } else {
-            mostrarNotificacion(data.error || 'Error al asignar tareas', 'error');
+            mostrarNotificacion(data.error || 'Error al procesar tareas', 'error');
         }
         
         // Restaurar botón

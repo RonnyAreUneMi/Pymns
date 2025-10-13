@@ -8,7 +8,7 @@ from pymetanalis.models import Proyecto
 class Articulo(models.Model):
     """Modelo principal de artículos con sistema de estados mejorado"""
     
-    # Estados según el documento
+    # Estados según el flujo de trabajo
     ESTADO_CHOICES = [
         ('EN_ESPERA', 'En Espera'),           # 0 - Subido pero sin tareas asignadas
         ('PENDIENTE', 'Pendiente'),           # 1 - Tarea asignada, puede empezar
@@ -58,13 +58,6 @@ class Articulo(models.Model):
         default='EN_ESPERA'
     )
     
-    # Datos extraídos (se llenan durante el trabajo)
-    datos_extraidos = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text='Datos que el colaborador ha encontrado y guardado'
-    )
-    
     # Control de duplicados
     articulo_original = models.ForeignKey(
         'self',
@@ -74,24 +67,9 @@ class Articulo(models.Model):
         related_name='duplicados'
     )
     
-    # Revisión y retroalimentación
-    comentarios_revision = models.TextField(
-        blank=True,
-        null=True,
-        help_text='Comentarios del supervisor cuando manda a corregir'
-    )
-    revisado_por = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='articulos_revisados',
-        help_text='Supervisor que revisó el artículo'
-    )
-    fecha_revision = models.DateTimeField(null=True, blank=True)
-    
     # Fechas de control
     fecha_carga = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
     fecha_asignacion = models.DateTimeField(
         null=True, 
         blank=True,
@@ -120,12 +98,14 @@ class Articulo(models.Model):
         indexes = [
             models.Index(fields=['proyecto', 'estado']),
             models.Index(fields=['usuario_asignado', 'estado']),
+            models.Index(fields=['fecha_actualizacion']),
+            models.Index(fields=['bibtex_key']),
         ]
 
     def __str__(self):
         return f"{self.titulo[:50]}... ({self.get_estado_display()})"
     
-    def cambiar_estado(self, nuevo_estado, usuario=None, comentario=None):
+    def cambiar_estado(self, nuevo_estado, usuario=None):
         """Método centralizado para cambio de estados con validaciones"""
         estado_anterior = self.estado
         self.estado = nuevo_estado
@@ -139,24 +119,19 @@ class Articulo(models.Model):
             self.fecha_envio_revision = timezone.now()
         elif nuevo_estado == 'APROBADO':
             self.fecha_aprobacion = timezone.now()
-            self.revisado_por = usuario
-            self.fecha_revision = timezone.now()
-        
-        # Guardar comentarios si es corrección
-        if comentario:
-            self.comentarios_revision = comentario
         
         self.save()
         
         # Registrar en historial
-        HistorialArticulo.objects.create(
-            articulo=self,
-            usuario=usuario,
-            tipo_cambio='CAMBIO_ESTADO',
-            campo_modificado='estado',
-            valor_anterior=estado_anterior,
-            valor_nuevo=nuevo_estado
-        )
+        if usuario:
+            HistorialArticulo.objects.create(
+                articulo=self,
+                usuario=usuario,
+                tipo_cambio='CAMBIO_ESTADO',
+                campo_modificado='estado',
+                valor_anterior=estado_anterior,
+                valor_nuevo=nuevo_estado
+            )
         
         return True
     
@@ -167,9 +142,28 @@ class Articulo(models.Model):
             return 0
         
         total = campos_asignados.count()
-        completados = sum(1 for ca in campos_asignados if ca.completado)
+        completados = campos_asignados.filter(completado=True).count()
         
-        return round((completados / total) * 100, 2)
+        return round((completados / total) * 100, 2) if total > 0 else 0
+    
+    def porcentaje_aprobado(self):
+        """Calcula el % de campos aprobados vs completados"""
+        campos_completados = self.campos_asignados.filter(completado=True)
+        if not campos_completados.exists():
+            return 0
+        
+        total = campos_completados.count()
+        aprobados = campos_completados.filter(aprobado=True).count()
+        
+        return round((aprobados / total) * 100, 2) if total > 0 else 0
+    
+    def puede_aprobar_articulo(self):
+        """Verifica si todos los campos completados están aprobados"""
+        campos_completados = self.campos_asignados.filter(completado=True)
+        if not campos_completados.exists():
+            return False
+        
+        return not campos_completados.filter(aprobado=False).exists()
 
 
 # ==================== CATÁLOGO DE CAMPOS PARA METAANÁLISIS ====================
@@ -254,6 +248,7 @@ class CampoMetanalisis(models.Model):
         ordering = ['categoria', 'nombre']
         indexes = [
             models.Index(fields=['categoria', 'activo']),
+            models.Index(fields=['proyecto']),
         ]
 
     def __str__(self):
@@ -276,7 +271,7 @@ class AsignacionCampo(models.Model):
         related_name='asignaciones'
     )
     
-    # Valor encontrado
+    # Valor encontrado (consistente con las vistas)
     valor = models.TextField(
         blank=True,
         null=True,
@@ -297,6 +292,25 @@ class AsignacionCampo(models.Model):
         related_name='campos_que_asigno'
     )
     
+    # 🆕 Aprobación granular por campo
+    aprobado = models.BooleanField(
+        default=False,
+        help_text='Si este campo específico fue aprobado por un supervisor'
+    )
+    aprobado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='campos_aprobados',
+        help_text='Supervisor que aprobó este campo específico'
+    )
+    fecha_aprobacion_campo = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Cuándo fue aprobado este campo'
+    )
+    
     # Notas internas
     notas = models.TextField(
         blank=True,
@@ -308,6 +322,9 @@ class AsignacionCampo(models.Model):
         verbose_name = 'Asignación de Campo'
         verbose_name_plural = 'Asignaciones de Campos'
         ordering = ['campo__categoria', 'campo__nombre']
+        indexes = [
+            models.Index(fields=['articulo', 'completado']),
+        ]
 
     def __str__(self):
         return f"{self.articulo.titulo[:30]}... - {self.campo.nombre}"
@@ -315,17 +332,50 @@ class AsignacionCampo(models.Model):
     def marcar_completado(self, valor, usuario=None):
         """Marca el campo como completado y guarda el valor"""
         self.valor = valor
-        self.completado = True
-        self.fecha_completado = timezone.now()
+        self.completado = bool(valor)  # Solo completado si tiene valor
+        self.fecha_completado = timezone.now() if valor else None
+        self.save()
+        
+        # Registrar en historial
+        if usuario:
+            HistorialArticulo.objects.create(
+                articulo=self.articulo,
+                usuario=usuario,
+                tipo_cambio='EDICION_METADATA',
+                campo_modificado=self.campo.codigo,
+                valor_nuevo=valor
+            )
+    
+    def aprobar_campo(self, supervisor):
+        """Aprueba este campo específico (aprobación granular)"""
+        self.aprobado = True
+        self.aprobado_por = supervisor
+        self.fecha_aprobacion_campo = timezone.now()
         self.save()
         
         # Registrar en historial
         HistorialArticulo.objects.create(
             articulo=self.articulo,
-            usuario=usuario,
-            tipo_cambio='EDICION_METADATA',
+            usuario=supervisor,
+            tipo_cambio='APROBACION',
             campo_modificado=self.campo.codigo,
-            valor_nuevo=valor
+            valor_nuevo=f'Campo "{self.campo.nombre}" aprobado individualmente'
+        )
+    
+    def desaprobar_campo(self, supervisor, razon=None):
+        """Quita la aprobación de un campo (para correcciones)"""
+        self.aprobado = False
+        self.aprobado_por = None
+        self.fecha_aprobacion_campo = None
+        self.save()
+        
+        # Registrar en historial
+        HistorialArticulo.objects.create(
+            articulo=self.articulo,
+            usuario=supervisor,
+            tipo_cambio='SOLICITUD_CORRECCION',
+            campo_modificado=self.campo.codigo,
+            valor_nuevo=f'Aprobación retirada' + (f': {razon}' if razon else '')
         )
 
 
@@ -359,6 +409,7 @@ class PlantillaBusqueda(models.Model):
     class Meta:
         verbose_name = 'Plantilla de Búsqueda'
         verbose_name_plural = 'Plantillas de Búsqueda'
+        ordering = ['-es_predeterminada', 'nombre']
 
     def __str__(self):
         return f"{self.nombre} ({self.campos.count()} campos)"
@@ -378,42 +429,140 @@ class PlantillaBusqueda(models.Model):
         return campos_creados
 
 
-# ==================== MODELOS EXISTENTES (SIN CAMBIOS) ====================
+# ==================== COMENTARIOS DE REVISIÓN ====================
+
+class ComentarioRevision(models.Model):
+    """Comentarios de supervisores durante el proceso de revisión"""
+    
+    TIPO_ACCION_CHOICES = [
+        ('APROBADO', 'Aprobado'),
+        ('CORRECCION', 'Corrección Solicitada'),
+    ]
+    
+    articulo = models.ForeignKey(
+        Articulo,
+        on_delete=models.CASCADE,
+        related_name='comentarios_revision'
+    )
+    supervisor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comentarios_dados',
+        help_text='Supervisor que hizo el comentario'
+    )
+    colaborador = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comentarios_recibidos',
+        help_text='Colaborador que recibe el comentario'
+    )
+    comentario = models.TextField()
+    tipo_accion = models.CharField(
+        max_length=20,
+        choices=TIPO_ACCION_CHOICES
+    )
+    fecha_comentario = models.DateTimeField(auto_now_add=True)
+    leido = models.BooleanField(
+        default=False,
+        help_text='Si el colaborador ya vio el comentario'
+    )
+
+    class Meta:
+        ordering = ['-fecha_comentario']
+        verbose_name = 'Comentario de Revisión'
+        verbose_name_plural = 'Comentarios de Revisión'
+        indexes = [
+            models.Index(fields=['articulo', '-fecha_comentario']),
+            models.Index(fields=['colaborador', 'leido']),
+        ]
+
+    def __str__(self):
+        return f"{self.supervisor.username} -> {self.colaborador.username}: {self.tipo_accion}"
+
+
+# ==================== ARCHIVOS SUBIDOS ====================
 
 class ArchivoSubida(models.Model):
-    proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='archivos_subidos')
-    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name='archivos_subidos')
+    """Archivos .bib subidos al proyecto"""
+    
+    proyecto = models.ForeignKey(
+        Proyecto,
+        on_delete=models.CASCADE,
+        related_name='archivos_subidos'
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='archivos_subidos'
+    )
     nombre_archivo = models.CharField(max_length=255)
     ruta_archivo = models.FileField(upload_to='uploads/articulos/')
     articulos_procesados = models.IntegerField(default=0)
     errores_procesamiento = models.JSONField(null=True, blank=True)
     fecha_subida = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = 'Archivo Subido'
+        verbose_name_plural = 'Archivos Subidos'
+        ordering = ['-fecha_subida']
+        indexes = [
+            models.Index(fields=['proyecto', '-fecha_subida']),
+        ]
+
     def __str__(self):
         return f"{self.nombre_archivo} ({self.proyecto.nombre})"
 
 
+# ==================== HISTORIAL DE ARTÍCULOS ====================
+
 class HistorialArticulo(models.Model):
-    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='historial')
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    """Historial completo de cambios en artículos"""
+    
+    TIPO_CAMBIO_CHOICES = [
+        ('CREACION', 'Creación'),
+        ('EDICION_METADATA', 'Edición de Metadata'),
+        ('CAMBIO_ESTADO', 'Cambio de Estado'),
+        ('ASIGNACION', 'Asignación de Tarea'),
+        ('MODIFICACION', 'Modificación'),
+        ('DESCARGA', 'Descarga'),
+        ('ELIMINACION', 'Eliminación'),
+        ('ENVIO_REVISION', 'Envío a Revisión'),
+        ('APROBACION', 'Aprobación'),
+        ('SOLICITUD_CORRECCION', 'Corrección Solicitada'),
+    ]
+    
+    articulo = models.ForeignKey(
+        Articulo, 
+        on_delete=models.CASCADE, 
+        related_name='historial'
+    )
+    usuario = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='historial_articulos'
+    )
     tipo_cambio = models.CharField(
         max_length=30,
-        choices=[
-            ('CREACION', 'Creación'),
-            ('EDICION_METADATA', 'Edición de Metadata'),
-            ('CAMBIO_ESTADO', 'Cambio de Estado'),
-            ('ASIGNACION', 'Asignación de Tarea'),
-        ]
+        choices=TIPO_CAMBIO_CHOICES
     )
     campo_modificado = models.CharField(max_length=100, null=True, blank=True)
     valor_anterior = models.TextField(null=True, blank=True)
     valor_nuevo = models.TextField(null=True, blank=True)
-    fecha = models.DateTimeField(auto_now_add=True)
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Historial de Artículo'
         verbose_name_plural = 'Historial de Artículos'
-        ordering = ['-fecha']
+        ordering = ['-fecha_cambio']
+        indexes = [
+            models.Index(fields=['articulo', '-fecha_cambio']),
+            models.Index(fields=['tipo_cambio']),
+            models.Index(fields=['usuario', '-fecha_cambio']),
+        ]
 
     def __str__(self):
-        return f"{self.tipo_cambio} - {self.articulo.titulo[:30]}..."
+        fecha_str = self.fecha_cambio.strftime('%d/%m/%Y %H:%M')
+        usuario_str = self.usuario.get_full_name() or self.usuario.username if self.usuario else 'Sistema'
+        return f"{self.get_tipo_cambio_display()} - {self.articulo.titulo[:30]}... - {usuario_str} - {fecha_str}"
