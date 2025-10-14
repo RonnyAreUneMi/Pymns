@@ -1,628 +1,1003 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Workspace - {{ articulo.titulo }} - {{ proyecto.nombre }} - PM{% endblock %}
+{% block title %}Workspace - {{ articulo.titulo|truncatewords:5 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para el resaltador de texto */
+    .highlighted {
+        background-color: rgba(250, 204, 21, 0.3);
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .highlighted:hover {
+        background-color: rgba(250, 204, 21, 0.5);
+    }
+    
+    /* Estilos para el visor de PDF/contenido */
+    .article-viewer {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+    
+    .article-content {
+        line-height: 1.8;
+        user-select: text;
+    }
+    
+    .article-content p {
+        margin-bottom: 1rem;
+    }
+    
+    /* Estilos para campos */
+    .campo-item {
+        transition: all 0.3s ease;
+    }
+    
+    .campo-item:hover {
+        transform: translateX(4px);
+    }
+    
+    .campo-completado {
+        border-left: 4px solid #10b981;
+    }
+    
+    .campo-aprobado {
+        border-left: 4px solid #3b82f6;
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    .campo-pendiente {
+        border-left: 4px solid #f59e0b;
+    }
+    
+    /* Badge de estado */
+    .badge-pendiente {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .badge-en-proceso {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .badge-en-revision {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+    
+    .badge-aprobado {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    /* Animación de guardado */
+    @keyframes saveSuccess {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .save-success {
+        animation: saveSuccess 0.3s ease;
+    }
+    
+    /* Scrollbar personalizado */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
-    <!-- Breadcrumb -->
-    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-        <a href="{% url 'core:home' %}" class="hover:text-primary dark:hover:text-primary-neon">Inicio</a>
-        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-        <a href="{% url 'mis_proyectos' %}" class="hover:text-primary dark:hover:text-primary-neon">Mis Proyectos</a>
-        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-        <a href="{% url 'detalle_proyecto' proyecto.id %}" class="hover:text-primary dark:hover:text-primary-neon">{{ proyecto.nombre }}</a>
-        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-        <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="hover:text-primary dark:hover:text-primary-neon">Artículos</a>
-        <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-        <span class="text-gray-700 dark:text-gray-300 line-clamp-1">{{ articulo.titulo }}</span>
-    </div>
-
-    <!-- Header Principal -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">{{ articulo.titulo }}</h1>
-                    <p class="text-gray-600 dark:text-gray-400 mb-2">{{ proyecto.nombre }} • {{ articulo.bibtex_key }}</p>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {% if articulo.estado == 'EN_ESPERA' %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:bg-opacity-30 dark:text-gray-300
-                        {% elif articulo.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
-                        {% elif articulo.estado == 'EN_PROCESO' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:bg-opacity-30 dark:text-orange-300
-                        {% elif articulo.estado == 'EN_REVISION' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300
-                        {% elif articulo.estado == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
-                        {% endif %}">
-                        {{ articulo.get_estado_display }}
+<div class="max-w-full mx-auto px-4">
+    <!-- Header Superior -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6 p-6">
+        <div class="flex items-center justify-between">
+            <div class="flex-1">
+                <!-- Breadcrumb -->
+                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <a href="{% url 'core:home' %}" class="hover:text-primary dark:hover:text-primary-neon">Inicio</a>
+                    <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <a href="{% url 'mis_proyectos' %}" class="hover:text-primary dark:hover:text-primary-neon">Mis Proyectos</a>
+                    <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="hover:text-primary dark:hover:text-primary-neon">{{ proyecto.nombre }}</a>
+                    <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <span class="text-gray-700 dark:text-gray-300">Workspace</span>
+                </div>
+                
+                <!-- Título del artículo -->
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ articulo.titulo }}</h1>
+                <div class="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                    <span class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        {{ articulo.autores|default:"Sin autores" }}
                     </span>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    <span>•</span>
+                    <span>{{ articulo.anio|default:"S/A" }}</span>
+                    {% if articulo.doi %}
+                    <span>•</span>
+                    <span class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                         </svg>
-                        <span>Volver</span>
-                    </a>
-                    <a href="{% url 'articulos:descargar_articulo' articulo.id %}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        <span>Descargar</span>
-                    </a>
+                        DOI: {{ articulo.doi }}
+                    </span>
+                    {% endif %}
                 </div>
             </div>
-
-            <!-- Estadísticas del Artículo -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 dark:bg-opacity-20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Campos</span>
-                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-6 4h6m-6 4h6"></path>
-                        </svg>
-                    </div>
-                    <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ total_campos }}</p>
-                </div>
-                <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800 dark:bg-opacity-20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Completados</span>
-                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{{ campos_completados }}/{{ total_campos }}</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div class="bg-yellow-600 h-2 rounded-full" style="width: {{ progreso_porcentaje }}%"></div>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 dark:bg-opacity-20 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-green-700 dark:text-green-300 font-medium">Aprobados</span>
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
-                        </svg>
-                    </div>
-                    <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ campos_aprobados }}/{{ campos_completados }}</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ progreso_aprobacion }}%"></div>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 dark:bg-opacity-20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-purple-700 dark:text-purple-300 font-medium">Última Actualización</span>
-                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <p class="text-lg font-bold text-purple-900 dark:text-purple-100">{{ articulo.fecha_actualizacion|date:"d M Y H:i" }}</p>
-                </div>
-            </div>
-
-            <!-- Acciones Principales -->
-            <div class="flex flex-wrap items-center gap-3 justify-end">
-                {% if puede_editar %}
-                    <button id="btnGuardarTodos" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>Guardar Todos</span>
-                    </button>
-                {% endif %}
+            
+            <!-- Badge de Estado y Botones -->
+            <div class="flex items-center space-x-3">
+                <span id="estadoBadge" class="px-4 py-2 rounded-full text-white font-semibold text-sm badge-{{ articulo.estado|lower }}">
+                    {{ articulo.get_estado_display }}
+                </span>
                 
                 {% if puede_enviar_revision %}
-                    <button id="btnEnviarRevision" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                        </svg>
-                        <span>Enviar a Revisión</span>
-                    </button>
+                <button onclick="enviarARevision()" class="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Enviar a Revisión</span>
+                </button>
                 {% endif %}
-
-                {% if puede_aprobar %}
-                    {% if articulo.puede_aprobar_articulo %}
-                        <button id="btnAprobarCompleto" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4 9-7"></path>
-                            </svg>
-                            <span>Aprobar Artículo</span>
-                        </button>
-                    {% else %}
-                        <button id="btnAprobarPendientes" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4 9-7"></path>
-                            </svg>
-                            <span>Aprobar Campos Pendientes</span>
-                        </button>
-                    {% endif %}
-                    
-                    <button id="btnSolicitarCorreccion" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                        </svg>
-                        <span>Solicitar Corrección</span>
-                    </button>
+                
+                {% if puede_aprobar and articulo.estado == 'EN_REVISION' %}
+                <button onclick="aprobarArticulo()" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Aprobar Artículo</span>
+                </button>
+                <button onclick="solicitarCorreccion()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <span>Solicitar Corrección</span>
+                </button>
                 {% endif %}
+                
+                <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
             </div>
+        </div>
+        
+        <!-- Barra de Progreso -->
+        <div class="mt-6">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Progreso de Completado</span>
+                <span id="progresoTexto" class="text-sm font-bold text-primary dark:text-primary-neon">{{ campos_completados }}/{{ total_campos }} campos ({{ progreso_porcentaje }}%)</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div id="barraProgreso" class="h-full bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary transition-all duration-500" style="width: {{ progreso_porcentaje }}%"></div>
+            </div>
+            
+            {% if campos_aprobados > 0 %}
+            <div class="flex items-center justify-between mb-2 mt-4">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Progreso de Aprobación</span>
+                <span class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ campos_aprobados }}/{{ campos_completados }} aprobados ({{ progreso_aprobacion }}%)</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: {{ progreso_aprobacion }}%"></div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Layout Principal: Columna Central + Lateral Derecha -->
+    <!-- Layout Principal: Visor (izq) + Formulario (der) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- COLUMNA CENTRAL: Visor del Artículo (2/3 del ancho en LG+) -->
+        <!-- COLUMNA IZQUIERDA: Visor del Artículo -->
         <div class="lg:col-span-2">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-                <div class="p-6">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        Contenido del Artículo
+                        <span>Contenido del Artículo</span>
                     </h2>
-                    
-                    <!-- Información Bibliográfica Completa -->
-                    <div class="space-y-4 mb-6">
-                        {% if articulo.doi %}
-                        <div class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                            <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-900 dark:text-white">DOI</p>
-                                <a href="https://doi.org/{{ articulo.doi }}" target="_blank" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-mono">{{ articulo.doi }}</a>
-                            </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="limpiarResaltados()" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all text-sm">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Limpiar Resaltados
+                        </button>
+                        {% if articulo.archivo_pdf %}
+                        <a href="{% url 'articulos:descargar_articulo' articulo.id %}" target="_blank" class="px-3 py-2 bg-primary dark:bg-primary-neon text-white rounded-lg hover:shadow-lg transition-all text-sm">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Descargar PDF
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Visor de Contenido -->
+                <div class="article-viewer custom-scrollbar p-8 bg-gray-50 dark:bg-gray-900">
+                    <div id="articleContent" class="article-content prose dark:prose-invert max-w-none">
+                        {% if articulo.abstract %}
+                        <div class="mb-8 p-6 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg border-l-4 border-blue-500">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Abstract</h3>
+                            <p class="text-gray-700 dark:text-gray-300 text-justify">{{ articulo.abstract }}</p>
                         </div>
                         {% endif %}
-
-                        {% if articulo.bibtex_original %}
-                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white mb-2">BibTeX Original</p>
-                            <pre class="text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto font-mono text-gray-700 dark:text-gray-300">{{ articulo.bibtex_original }}</pre>
+                        
+                        {% if articulo.contenido_extraido %}
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Contenido Extraído</h3>
+                            {{ articulo.contenido_extraido|safe }}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-lg mb-2">Contenido no disponible para visualización</p>
+                            <p class="text-sm">Descarga el PDF para ver el artículo completo</p>
                         </div>
                         {% endif %}
                     </div>
-
-                    <!-- Historial de Cambios -->
+                </div>
+            </div>
+            
+            <!-- Historial y Comentarios (Tabs) -->
+            <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="border-b border-gray-200 dark:border-gray-700">
+                    <nav class="flex">
+                        <button onclick="cambiarTab('historial')" id="tabHistorial" class="px-6 py-4 text-sm font-semibold border-b-2 border-primary dark:border-primary-neon text-primary dark:text-primary-neon">
+                            Historial ({{ historial.count }})
+                        </button>
+                        <button onclick="cambiarTab('comentarios')" id="tabComentarios" class="px-6 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                            Comentarios ({{ comentarios.count }})
+                        </button>
+                    </nav>
+                </div>
+                
+                <!-- Contenido Historial -->
+                <div id="contenidoHistorial" class="p-6 max-h-96 overflow-y-auto custom-scrollbar">
                     {% if historial %}
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Historial de Cambios</h3>
-                        <div class="space-y-3 max-h-96 overflow-y-auto">
-                            {% for cambio in historial %}
-                            <div class="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <div class="space-y-4">
+                            {% for entrada in historial %}
+                            <div class="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-primary dark:bg-primary-neon bg-opacity-10 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-primary dark:text-primary-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
                                 </div>
                                 <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ cambio.usuario.get_full_name|default:cambio.usuario.username }}</span>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ cambio.fecha_cambio|date:"d M Y H:i" }}</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ cambio.tipo_cambio }}: {{ cambio.valor_nuevo }}</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ entrada.usuario.get_full_name|default:entrada.usuario.username }}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ entrada.valor_nuevo }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">{{ entrada.fecha_cambio|date:"d/m/Y H:i" }}</p>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
-                    </div>
+                    {% else %}
+                        <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay historial registrado</p>
                     {% endif %}
                 </div>
-            </div>
-
-            <!-- Comentarios de Revisión -->
-            {% if comentarios %}
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Comentarios de Revisión</h3>
-                    <div class="space-y-4 max-h-96 overflow-y-auto">
-                        {% for comentario in comentarios %}
-                        <div class="flex space-x-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 
-                            {% if comentario.tipo_accion == 'APROBADO' %}border-green-500
-                            {% elif comentario.tipo_accion == 'CORRECCION' %}border-orange-500
-                            {% else %}border-blue-500{% endif %}">
-                            <div class="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                {% if comentario.supervisor %}
-                                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ comentario.supervisor.get_full_name|first|upper }}</span>
-                                {% else %}
-                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
-                                    </svg>
-                                {% endif %}
-                            </div>
-                            <div class="flex-1">
+                
+                <!-- Contenido Comentarios -->
+                <div id="contenidoComentarios" class="p-6 max-h-96 overflow-y-auto custom-scrollbar hidden">
+                    {% if comentarios %}
+                        <div class="space-y-4">
+                            {% for comentario in comentarios %}
+                            <div class="p-4 border-l-4 {% if comentario.tipo_accion == 'APROBADO' %}border-green-500 bg-green-50 dark:bg-green-900 dark:bg-opacity-20{% elif comentario.tipo_accion == 'CORRECCION' %}border-orange-500 bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20{% else %}border-gray-300 bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg">
                                 <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {% if comentario.supervisor %}{{ comentario.supervisor.get_full_name|default:comentario.supervisor.username }}{% else %}Sistema{% endif %}
-                                    </span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ comentario.fecha_comentario|date:"d M Y H:i" }}</span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">{{ comentario.supervisor.get_full_name|default:comentario.supervisor.username }}</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ comentario.fecha_comentario|date:"d/m/Y H:i" }}</span>
                                 </div>
                                 <p class="text-sm text-gray-700 dark:text-gray-300">{{ comentario.comentario }}</p>
                                 {% if comentario.tipo_accion %}
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-2
-                                    {% if comentario.tipo_accion == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
-                                    {% elif comentario.tipo_accion == 'CORRECCION' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:bg-opacity-30 dark:text-orange-300
-                                    {% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300{% endif %}">
-                                    {{ comentario.tipo_accion }}
+                                <span class="inline-block mt-2 px-2 py-1 text-xs rounded {% if comentario.tipo_accion == 'APROBADO' %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200{% elif comentario.tipo_accion == 'CORRECCION' %}bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-200{% endif %}">
+                                    {{ comentario.get_tipo_accion_display }}
                                 </span>
                                 {% endif %}
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
+                    {% else %}
+                        <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay comentarios</p>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
         </div>
 
-        <!-- COLUMNA LATERAL DERECHA: Formulario de Campos (1/3 del ancho en LG+) -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Panel de Campos de Trabajo -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-6">
+        <!-- COLUMNA DERECHA: Formulario de Campos -->
+        <div class="lg:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 sticky top-6">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                         </svg>
-                        Campos de Metanálisis
+                        <span>Campos a Completar</span>
                     </h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Complete los campos requeridos para el análisis</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Completa los datos solicitados</p>
                 </div>
                 
-                <div class="p-6 max-h-[70vh] overflow-y-auto">
-                    {% for asignacion in campos_asignados %}
-                    <div class="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700 last:border-b-0 last:pb-0">
-                        <!-- Header del Campo -->
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <h4 class="font-semibold text-gray-900 dark:text-white">{{ asignacion.campo.nombre }}</h4>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ asignacion.campo.categoria }} • {{ asignacion.campo.get_tipo_dato_display }}</p>
-                                {% if asignacion.campo.descripcion %}
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">{{ asignacion.campo.descripcion }}</p>
-                                {% endif %}
+                <!-- Lista de Campos -->
+                <div class="p-6 space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
+                    {% if campos_asignados %}
+                        {% regroup campos_asignados by campo.get_categoria_display as categorias %}
+                        {% for categoria in categorias %}
+                            <div class="mb-6">
+                                <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                    <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                                    {{ categoria.grouper }}
+                                </h3>
+                                
+                                {% for asignacion in categoria.list %}
+                                <div class="campo-item mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg {% if asignacion.aprobado %}campo-aprobado{% elif asignacion.completado %}campo-completado{% else %}campo-pendiente{% endif %}" 
+                                     data-campo-id="{{ asignacion.campo.id }}"
+                                     data-asignacion-id="{{ asignacion.id }}">
+                                    
+                                    <!-- Header del Campo -->
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div class="flex-1">
+                                            <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                                                {{ asignacion.campo.nombre }}
+                                                {% if asignacion.campo.descripcion %}
+                                                <svg class="w-4 h-4 inline text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="{{ asignacion.campo.descripcion }}">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                {% endif %}
+                                            </label>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ asignacion.campo.get_tipo_dato_display }}</p>
+                                        </div>
+                                        
+                                        <!-- Badges de Estado -->
+                                        <div class="flex items-center space-x-2">
+                                            {% if asignacion.aprobado %}
+                                            <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-800 dark:text-blue-300 rounded flex items-center">
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Aprobado
+                                            </span>
+                                            {% elif asignacion.completado %}
+                                            <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300 rounded">
+                                                Completado
+                                            </span>
+                                            {% else %}
+                                            <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 text-orange-800 dark:text-orange-300 rounded">
+                                                Pendiente
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Input del Campo -->
+                                    <div class="mb-3">
+                                        {% if asignacion.campo.tipo_dato == 'TEXTO_CORTO' %}
+                                        <input type="text" 
+                                               class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                               value="{{ asignacion.valor|default:'' }}"
+                                               {% if asignacion.aprobado %}readonly{% endif %}
+                                               placeholder="Ingresa el valor...">
+                                        
+                                        {% elif asignacion.campo.tipo_dato == 'TEXTO_LARGO' %}
+                                        <textarea 
+                                               class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                               rows="3"
+                                               {% if asignacion.aprobado %}readonly{% endif %}
+                                               placeholder="Ingresa el texto...">{{ asignacion.valor|default:'' }}</textarea>
+                                        
+                                        {% elif asignacion.campo.tipo_dato == 'NUMERO' %}
+                                        <input type="number" 
+                                               class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                               value="{{ asignacion.valor|default:'' }}"
+                                               {% if asignacion.aprobado %}readonly{% endif %}
+                                               step="any"
+                                               placeholder="Ingresa un número...">
+                                        
+                                        {% elif asignacion.campo.tipo_dato == 'FECHA' %}
+                                        <input type="date" 
+                                               class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                               value="{{ asignacion.valor|default:'' }}"
+                                               {% if asignacion.aprobado %}readonly{% endif %}>
+                                        
+                                        {% elif asignacion.campo.tipo_dato == 'SI_NO' %}
+                                        <select class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                                {% if asignacion.aprobado %}disabled{% endif %}>
+                                            <option value="">Selecciona...</option>
+                                            <option value="Sí" {% if asignacion.valor == 'Sí' %}selected{% endif %}>Sí</option>
+                                            <option value="No" {% if asignacion.valor == 'No' %}selected{% endif %}>No</option>
+                                        </select>
+                                        
+                                        {% elif asignacion.campo.tipo_dato == 'OPCIONES' %}
+                                        <select class="campo-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600{% endif %}"
+                                                {% if asignacion.aprobado %}disabled{% endif %}>
+                                            <option value="">Selecciona...</option>
+                                            {% if asignacion.campo.opciones_validas %}
+                                                {% with opciones=asignacion.campo.get_opciones_lista %}
+                                                    {% for opcion in opciones %}
+                                                    <option value="{{ opcion }}" {% if asignacion.valor == opcion %}selected{% endif %}>{{ opcion }}</option>
+                                                    {% endfor %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        </select>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Notas del campo -->
+                                    {% if asignacion.notas %}
+                                    <div class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 rounded-lg border-l-4 border-yellow-400">
+                                        <p class="text-xs font-semibold text-yellow-800 dark:text-yellow-300 mb-1">Notas del supervisor:</p>
+                                        <p class="text-xs text-yellow-700 dark:text-yellow-400 whitespace-pre-line">{{ asignacion.notas }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Botones de Acción -->
+                                    <div class="flex items-center justify-between">
+                                        {% if asignacion.aprobado %}
+                                        <span class="text-xs text-blue-600 dark:text-blue-400 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Campo bloqueado (Aprobado)
+                                        </span>
+                                        {% else %}
+                                        <button type="button" 
+                                                onclick="guardarCampo({{ asignacion.campo.id }}, {{ asignacion.id }})"
+                                                class="btn-guardar px-3 py-2 bg-gradient-to-r from-primary to-primary-dark dark:from-primary-neon dark:to-primary text-white rounded-lg hover:shadow-lg transition-all duration-200 text-xs font-semibold flex items-center space-x-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span>Guardar</span>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if puede_aprobar and asignacion.completado %}
+                                        <div class="flex items-center space-x-2">
+                                            {% if not asignacion.aprobado %}
+                                            <button type="button" 
+                                                    onclick="aprobarCampo({{ asignacion.id }})"
+                                                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-xs font-semibold flex items-center space-x-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                <span>Aprobar</span>
+                                            </button>
+                                            {% endif %}
+                                            <button type="button" 
+                                                    onclick="solicitarCorreccionCampo({{ asignacion.id }}, '{{ asignacion.campo.nombre|escapejs }}')"
+                                                    class="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all text-xs font-semibold flex items-center space-x-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                <span>Corrección</span>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <!-- Estado del Campo -->
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                    {% if asignacion.aprobado %}bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300
-                                    {% elif asignacion.completado %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300
-                                    {% else %}bg-gray-100 text-gray-700 dark:bg-gray-900 dark:bg-opacity-30 dark:text-gray-300{% endif %}">
-                                    {% if asignacion.aprobado %}<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Aprobado
-                                    {% elif asignacion.completado %}En revisión
-                                    {% else %}Pendiente{% endif %}
-                                </span>
-                                {% if puede_aprobar and asignacion.completado and not asignacion.aprobado %}
-                                <button class="btn-aprobar-campo p-1 text-green-600 hover:text-green-800" data-asignacion="{{ asignacion.id }}" title="Aprobar campo">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4 9-7"></path>
-                                    </svg>
-                                </button>
-                                {% endif %}
-                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                            </svg>
+                            <p class="text-lg mb-2">No hay campos asignados</p>
+                            <p class="text-sm">Contacta con el supervisor del proyecto</p>
                         </div>
-
-                        <!-- Formulario del Campo -->
-                        <div class="campo-form" data-campo="{{ asignacion.campo.id }}" data-asignacion="{{ asignacion.id }}">
-                            {% if asignacion.campo.tipo_dato == 'TEXTO' or asignacion.campo.tipo_dato == 'TEXTO_LARGO' %}
-                                <textarea class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none
-                                    {% if asignacion.campo.tipo_dato == 'TEXTO_LARGO' %}h-24{% else %}h-12{% endif %}
-                                    {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600 cursor-not-allowed{% endif %}"
-                                    {% if asignacion.aprobado %}readonly{% endif %}
-                                    name="campo_{{ asignacion.campo.id }}" placeholder="Ingrese el valor para {{ asignacion.campo.nombre }}">{{ asignacion.valor|default:"" }}</textarea>
-                            {% elif asignacion.campo.tipo_dato == 'NUMERO' %}
-                                <input type="number" step="any" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                    {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600 cursor-not-allowed{% endif %}"
-                                    {% if asignacion.aprobado %}readonly{% endif %}
-                                    name="campo_{{ asignacion.campo.id }}" value="{{ asignacion.valor|default:"" }}" placeholder="Ingrese un número">
-                            {% elif asignacion.campo.tipo_dato == 'FECHA' %}
-                                <input type="date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                    {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600 cursor-not-allowed{% endif %}"
-                                    {% if asignacion.aprobado %}readonly{% endif %}
-                                    name="campo_{{ asignacion.campo.id }}" value="{{ asignacion.valor|date:'Y-m-d'|default:"" }}">
-                            {% elif asignacion.campo.tipo_dato == 'OPCIONES' %}
-                                <select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                    {% if asignacion.aprobado %}bg-gray-100 dark:bg-gray-600 cursor-not-allowed{% endif %}"
-                                    {% if asignacion.aprobado %}disabled{% endif %}
-                                    name="campo_{{ asignacion.campo.id }}">
-                                    <option value="">Seleccione una opción</option>
-                                    {% for opcion in asignacion.campo.opciones_validas %}
-                                    <option value="{{ opcion }}" {% if asignacion.valor == opcion %}selected{% endif %}>{{ opcion }}</option>
-                                    {% endfor %}
-                                </select>
-                            {% endif %}
-
-                            <!-- Botón Guardar Individual -->
-                            {% if puede_editar and not asignacion.aprobado %}
-                            <button class="btn-guardar-campo mt-2 px-4 py-2 bg-primary hover:bg-primary-dark dark:bg-primary-neon dark:hover:bg-primary text-white rounded-lg text-sm font-medium transition-all duration-200 w-full flex items-center justify-center space-x-2"
-                                data-asignacion="{{ asignacion.id }}" data-articulo="{{ articulo.id }}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4 9-7"></path>
-                                </svg>
-                                <span>{% if asignacion.completado %}Actualizar{% else %}Guardar{% endif %}</span>
-                            </button>
-                            {% endif %}
-                        </div>
-
-                        <!-- Notas del Campo -->
-                        {% if asignacion.notas %}
-                        <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                            <p class="text-xs text-yellow-800 dark:text-yellow-300 font-mono">{{ asignacion.notas }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% empty %}
-                    <div class="text-center py-12">
-                        <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="text-gray-500 dark:text-gray-400">No hay campos asignados a este artículo</p>
-                    </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Confirmación Aprobar Artículo -->
-<div id="modalAprobarCompleto" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Aprobar Artículo Completo</h3>
-                <button onclick="cerrarModal('modalAprobarCompleto')" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="mb-6">
-                <p class="text-gray-600 dark:text-gray-400 mb-4">¿Deseas aprobar completamente este artículo?</p>
-                <textarea id="comentarioAprobar" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg" rows="3" placeholder="Comentario opcional (visible para el colaborador)..."></textarea>
-            </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="cerrarModal('modalAprobarCompleto')" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded">Cancelar</button>
-                <button id="confirmarAprobarCompleto" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4 9-7"></path>
-                    </svg>
-                    <span>Aprobar</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Solicitar Corrección -->
-<div id="modalSolicitarCorreccion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Solicitar Corrección</h3>
-                <button onclick="cerrarModal('modalSolicitarCorreccion')" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="mb-6">
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Proporcione comentarios específicos sobre las correcciones necesarias:</p>
-                <textarea id="comentarioCorreccion" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg" rows="4" placeholder="Detalles de la corrección requerida..." required></textarea>
-            </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="cerrarModal('modalSolicitarCorreccion')" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded">Cancelar</button>
-                <button id="confirmarSolicitarCorreccion" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                    </svg>
-                    <span>Solicitar</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const articuloId = {{ articulo.id }};
+const csrftoken = getCookie('csrftoken');
+const articuloId = {{ articulo.id }};
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// ==================== RESALTADOR DE TEXTO ====================
+let isSelecting = false;
+
+document.getElementById('articleContent')?.addEventListener('mouseup', function() {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
     
-    // Guardar campo individual
-    document.querySelectorAll('.btn-guardar-campo').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const asignacionId = this.dataset.asignacion;
-            const campoContainer = this.closest('.campo-form');
-            const campoId = campoContainer.dataset.campo;
-            const input = campoContainer.querySelector(`[name="campo_${campoId}"]`);
-            const valor = input.value.trim();
+    if (selectedText.length > 0) {
+        resaltarTexto();
+    }
+});
+
+function resaltarTexto() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const span = document.createElement('span');
+        span.className = 'highlighted';
+        span.onclick = function() {
+            // Opción: copiar al portapapeles
+            navigator.clipboard.writeText(this.textContent);
+            mostrarToast('Texto copiado al portapapeles', 'success');
+        };
+        
+        try {
+            range.surroundContents(span);
+        } catch (e) {
+            // Si falla, intentar método alternativo
+            const contents = range.extractContents();
+            span.appendChild(contents);
+            range.insertNode(span);
+        }
+        
+        selection.removeAllRanges();
+    }
+}
+
+function limpiarResaltados() {
+    const highlighted = document.querySelectorAll('.highlighted');
+    highlighted.forEach(span => {
+        const parent = span.parentNode;
+        while (span.firstChild) {
+            parent.insertBefore(span.firstChild, span);
+        }
+        parent.removeChild(span);
+    });
+    mostrarToast('Resaltados eliminados', 'info');
+}
+
+// ==================== GUARDAR CAMPO ====================
+function guardarCampo(campoId, asignacionId) {
+    const campoItem = document.querySelector(`[data-asignacion-id="${asignacionId}"]`);
+    const input = campoItem.querySelector('.campo-input');
+    const valor = input.value.trim();
+    
+    const btnGuardar = campoItem.querySelector('.btn-guardar');
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Guardando...</span>';
+    
+    fetch(`/articulos/workspace/${articuloId}/guardar-campo/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            campo_id: campoId,
+            valor: valor
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarToast(data.mensaje, 'success');
             
-            if (!valor && !confirm('¿Guardar campo vacío?')) return;
+            // Actualizar UI
+            campoItem.classList.remove('campo-pendiente');
+            campoItem.classList.add('campo-completado');
             
-            fetch(`/articulos/guardar_campo_workspace/${articuloId}/`, {
+            // Actualizar progreso
+            document.getElementById('progresoTexto').textContent = 
+                `${data.campos_completados}/${data.total_campos} campos (${data.progreso_porcentaje}%)`;
+            document.getElementById('barraProgreso').style.width = `${data.progreso_porcentaje}%`;
+            
+            // Actualizar estado si cambió
+            if (data.estado_cambiado) {
+                document.getElementById('estadoBadge').textContent = data.nuevo_estado;
+                document.getElementById('estadoBadge').className = 
+                    `px-4 py-2 rounded-full text-white font-semibold text-sm badge-${data.nuevo_estado.toLowerCase().replace(' ', '-')}`;
+            }
+            
+            // Animación de éxito
+            campoItem.classList.add('save-success');
+            setTimeout(() => campoItem.classList.remove('save-success'), 300);
+            
+        } else {
+            mostrarToast(data.error || 'Error al guardar', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarToast('Error de conexión', 'error');
+    })
+    .finally(() => {
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar</span>';
+    });
+}
+
+// ==================== APROBAR CAMPO ====================
+function aprobarCampo(asignacionId) {
+    Swal.fire({
+        title: '¿Aprobar campo?',
+        text: 'Una vez aprobado, el campo no podrá ser modificado',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Aprobar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/articulos/campo/${asignacionId}/aprobar/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToast(data.mensaje, 'success');
+                    
+                    if (data.articulo_aprobado_completo) {
+                        Swal.fire({
+                            title: '¡Artículo Aprobado!',
+                            text: 'Todos los campos han sido aprobados. El artículo está completo.',
+                            icon: 'success',
+                            confirmButtonText: 'Ver Bandeja'
+                        }).then(() => {
+                            window.location.href = `/articulos/proyecto/{{ proyecto.id }}/bandeja-revision/`;
+                        });
+                    } else {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } else {
+                    mostrarToast(data.error || 'Error al aprobar', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('Error de conexión', 'error');
+            });
+        }
+    });
+}
+
+// ==================== SOLICITAR CORRECCIÓN DE CAMPO ====================
+function solicitarCorreccionCampo(asignacionId, nombreCampo) {
+    Swal.fire({
+        title: `Solicitar corrección`,
+        html: `<p class="mb-4">Campo: <strong>${nombreCampo}</strong></p>`,
+        input: 'textarea',
+        inputLabel: 'Comentario de corrección',
+        inputPlaceholder: 'Describe qué debe corregirse...',
+        inputAttributes: {
+            'aria-label': 'Comentario de corrección',
+            'rows': 4
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Solicitar Corrección',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Debes escribir un comentario';
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/articulos/campo/${asignacionId}/solicitar-correccion/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
                 },
                 body: JSON.stringify({
-                    campo_id: campoId,
-                    valor: valor
+                    comentario: result.value
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showToast('Campo guardado exitosamente', 'success');
-                    if (data.estado_cambiado) {
-                        location.reload(); // Recargar para actualizar estado
-                    }
-                    btn.textContent = 'Actualizar';
-                    btn.classList.remove('bg-primary', 'hover:bg-primary-dark');
-                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    mostrarToast('Corrección solicitada exitosamente', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    showToast(data.error, 'error');
+                    mostrarToast(data.error || 'Error al solicitar corrección', 'error');
                 }
             })
-            .catch(error => showToast('Error de conexión', 'error'));
-        });
-    });
-    
-    // Aprobar campo individual
-    document.querySelectorAll('.btn-aprobar-campo').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const asignacionId = this.dataset.asignacion;
-            if (confirm('¿Aprobar este campo?')) {
-                fetch(`/articulos/aprobar_campo_individual/${asignacionId}/`, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast(data.mensaje, 'success');
-                        if (data.articulo_aprobado_completo) {
-                            location.reload();
-                        } else {
-                            btn.style.display = 'none';
-                            btn.parentElement.querySelector('span').textContent = 'Aprobado ✓';
-                        }
-                    }
-                });
-            }
-        });
-    });
-    
-    // Guardar todos
-    document.getElementById('btnGuardarTodos')?.addEventListener('click', function() {
-        const campos = document.querySelectorAll('.campo-form input, .campo-form textarea, .campo-form select');
-        let cambios = 0;
-        
-        campos.forEach(input => {
-            if (!input.readonly && input.value.trim()) cambios++;
-        });
-        
-        if (confirm(`¿Guardar ${cambios} campos completados?`)) {
-            // Implementar lógica de guardado masivo
-            location.reload(); // Temporal: recargar para simular guardado
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('Error de conexión', 'error');
+            });
         }
     });
-    
-    // Enviar a revisión
-    document.getElementById('btnEnviarRevision')?.addEventListener('click', function() {
-        fetch(`/articulos/enviar_a_revision/${articuloId}/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.mensaje, 'success');
-                setTimeout(() => location.reload(), 1500);
-            }
-        });
-    });
-    
-    // Aprobar artículo completo
-    document.getElementById('btnAprobarCompleto')?.addEventListener('click', function() {
-        document.getElementById('modalAprobarCompleto').classList.remove('hidden');
-    });
-    
-    document.getElementById('confirmarAprobarCompleto')?.addEventListener('click', function() {
-        const comentario = document.getElementById('comentarioAprobar').value;
-        fetch(`/articulos/aprobar_articulo/${articuloId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ comentario })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.mensaje, 'success');
-                setTimeout(() => window.location.href = data.redirect_url, 1500);
-            }
-        });
-        cerrarModal('modalAprobarCompleto');
-    });
-    
-    // Solicitar corrección
-    document.getElementById('btnSolicitarCorreccion')?.addEventListener('click', function() {
-        document.getElementById('modalSolicitarCorreccion').classList.remove('hidden');
-    });
-    
-    document.getElementById('confirmarSolicitarCorreccion')?.addEventListener('click', function() {
-        const comentario = document.getElementById('comentarioCorreccion').value.trim();
-        if (!comentario) return alert('Comentario requerido');
-        
-        fetch(`/articulos/solicitar_correccion/${articuloId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ comentario })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.mensaje, 'warning');
-                setTimeout(() => window.location.href = '{% url "articulos:bandeja_revision" proyecto.id %}', 1500);
-            }
-        });
-        cerrarModal('modalSolicitarCorreccion');
-    });
-    
-    // Utilidades
-    function cerrarModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-    }
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+}
+
+// ==================== ENVIAR A REVISIÓN ====================
+function enviarARevision() {
+    Swal.fire({
+        title: '¿Enviar a revisión?',
+        text: 'El artículo será enviado al supervisor para su revisión',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#8b5cf6',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/articulos/articulo/${articuloId}/enviar-revision/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
                 }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Enviado!',
+                        text: data.mensaje,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    mostrarToast(data.error || 'Error al enviar', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('Error de conexión', 'error');
+            });
+        }
+    });
+}
+
+// ==================== APROBAR ARTÍCULO ====================
+function aprobarArticulo() {
+    Swal.fire({
+        title: 'Aprobar artículo completo',
+        html: `
+            <p class="mb-4">¿Deseas aprobar este artículo?</p>
+            <p class="text-sm text-gray-600 mb-4">Todos los campos completados serán aprobados automáticamente</p>
+            <textarea id="comentarioAprobacion" class="w-full px-3 py-2 border rounded-lg" rows="3" placeholder="Comentario opcional..."></textarea>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Aprobar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            return document.getElementById('comentarioAprobacion').value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/articulos/articulo/${articuloId}/aprobar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    comentario: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Aprobado!',
+                        html: `<p>${data.mensaje}</p><p class="text-sm text-gray-600 mt-2">${data.campos_aprobados} campos aprobados</p>`,
+                        icon: 'success',
+                        confirmButtonText: 'Ir a Bandeja'
+                    }).then(() => {
+                        window.location.href = data.redirect_url;
+                    });
+                } else {
+                    mostrarToast(data.error || 'Error al aprobar', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('Error de conexión', 'error');
+            });
+        }
+    });
+}
+
+// ==================== SOLICITAR CORRECCIÓN ====================
+function solicitarCorreccion() {
+    Swal.fire({
+        title: 'Solicitar corrección al artículo',
+        input: 'textarea',
+        inputLabel: 'Describe las correcciones necesarias',
+        inputPlaceholder: 'Indica qué debe corregirse...',
+        inputAttributes: {
+            'rows': 5
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Solicitar Corrección',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Debes escribir un comentario';
             }
         }
-        return cookieValue;
-    }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/articulos/articulo/${articuloId}/solicitar-correccion/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    comentario: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Corrección solicitada',
+                        text: data.mensaje,
+                        icon: 'success',
+                        confirmButtonText: 'Ir a Bandeja'
+                    }).then(() => {
+                        window.location.href = data.redirect_url;
+                    });
+                } else {
+                    mostrarToast(data.error || 'Error al solicitar corrección', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('Error de conexión', 'error');
+            });
+        }
+    });
+}
+
+// ==================== CAMBIAR TAB ====================
+function cambiarTab(tab) {
+    const tabHistorial = document.getElementById('tabHistorial');
+    const tabComentarios = document.getElementById('tabComentarios');
+    const contenidoHistorial = document.getElementById('contenidoHistorial');
+    const contenidoComentarios = document.getElementById('contenidoComentarios');
     
-    function showToast(message, type) {
-        // Implementar toast notification
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-            type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+    if (tab === 'historial') {
+        tabHistorial.classList.add('border-primary', 'dark:border-primary-neon', 'text-primary', 'dark:text-primary-neon');
+        tabHistorial.classList.remove('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+        tabComentarios.classList.remove('border-primary', 'dark:border-primary-neon', 'text-primary', 'dark:text-primary-neon');
+        tabComentarios.classList.add('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+        contenidoHistorial.classList.remove('hidden');
+        contenidoComentarios.classList.add('hidden');
+    } else {
+        tabComentarios.classList.add('border-primary', 'dark:border-primary-neon', 'text-primary', 'dark:text-primary-neon');
+        tabComentarios.classList.remove('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+        tabHistorial.classList.remove('border-primary', 'dark:border-primary-neon', 'text-primary', 'dark:text-primary-neon');
+        tabHistorial.classList.add('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+        contenidoComentarios.classList.remove('hidden');
+        contenidoHistorial.classList.add('hidden');
+    }
+}
+
+// ==================== TOAST NOTIFICATIONS ====================
+function mostrarToast(mensaje, tipo = 'info') {
+    const bgColors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-orange-500',
+        info: 'bg-blue-500'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-6 right-6 ${bgColors[tipo]} text-white px-6 py-4 rounded-lg shadow-2xl z-50 animate-fade-in-up flex items-center space-x-3`;
+    toast.innerHTML = `
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <span>${mensaje}</span>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Auto-guardado cada 30 segundos (opcional)
+let autoSaveInterval;
+function iniciarAutoGuardado() {
+    autoSaveInterval = setInterval(() => {
+        // Guardar automáticamente campos modificados
+        const camposModificados = document.querySelectorAll('.campo-input[data-modificado="true"]');
+        camposModificados.forEach(input => {
+            const campoItem = input.closest('[data-asignacion-id]');
+            const campoId = campoItem.dataset.campoId;
+            const asignacionId = campoItem.dataset.asignacionId;
+            guardarCampo(parseInt(campoId), parseInt(asignacionId));
+            input.dataset.modificado = "false";
+        });
+    }, 30000); // 30 segundos
+}
+
+// Marcar campos como modificados
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.campo-input').forEach(input => {
+        input.addEventListener('input', function() {
+            this.dataset.modificado = "true";
+        });
+    });
+    
+    // Iniciar auto-guardado si el usuario lo desea
+    // iniciarAutoGuardado(); // Descomentar para activar
+});
+
+// Prevenir pérdida de datos
+window.addEventListener('beforeunload', function(e) {
+    const camposModificados = document.querySelectorAll('.campo-input[data-modificado="true"]');
+    if (camposModificados.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'Tienes cambios sin guardar. ¿Estás seguro de salir?';
+        return e.returnValue;
+    }
+});
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    // Ctrl+S o Cmd+S para guardar
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        const campoActivo = document.activeElement;
+        if (campoActivo.classList.contains('campo-input')) {
+            const campoItem = campoActivo.closest('[data-asignacion-id]');
+            const campoId = campoItem.dataset.campoId;
+            const asignacionId = campoItem.dataset.asignacionId;
+            guardarCampo(parseInt(campoId), parseInt(asignacionId));
+        }
     }
 });
 </script>
 
-<style>
-.line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>
 {% endblock %}

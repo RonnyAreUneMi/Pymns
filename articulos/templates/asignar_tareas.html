@@ -316,7 +316,12 @@ function cargarArticulos(usuarioId) {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar artículos');
+        }
+        return response.json();
+    })
     .then(data => {
         articulosData = data.articulos;
         mostrarArticulos(data.articulos);
@@ -327,7 +332,11 @@ function cargarArticulos(usuarioId) {
         document.getElementById('loading-articulos').classList.add('hidden');
         document.getElementById('lista-articulos').innerHTML = `
             <div class="p-8 text-center text-red-600 dark:text-red-400">
-                <p>Error al cargar artículos</p>
+                <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="font-medium">Error al cargar artículos</p>
+                <p class="text-sm mt-1">${error.message}</p>
             </div>
         `;
     });
@@ -349,7 +358,7 @@ function mostrarArticulos(articulos) {
     }
     
     container.innerHTML = articulos.map(art => `
-        <label class="flex items-start p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+        <label class="flex items-start p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer rounded-lg">
             <input type="checkbox" name="articulos" value="${art.id}" class="mt-1 w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded articulo-checkbox" onchange="actualizarCamposAsignados()">
             <div class="ml-4 flex-1">
                 <div class="flex items-start justify-between">
@@ -414,7 +423,12 @@ function actualizarCamposAsignados() {
         },
         body: JSON.stringify({ articulos_ids: articulosSeleccionados })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al obtener campos asignados');
+        }
+        return response.json();
+    })
     .then(data => {
         camposAsignadosActuales = data.campos_asignados || [];
         marcarCamposAsignados();
@@ -440,22 +454,26 @@ function marcarCamposAsignados() {
         const checkbox = document.querySelector(`input[name="campos"][value="${campo.id}"]`);
         if (checkbox) {
             const container = checkbox.closest('.campo-label');
-            container.classList.add('bg-yellow-50', 'dark:bg-yellow-900', 'dark:bg-opacity-20', 'border-yellow-300', 'dark:border-yellow-700', 'border-2');
-            
-            // Agregar indicador visual
-            const indicator = document.createElement('div');
-            indicator.className = 'campo-ya-asignado mt-2 flex items-center space-x-1';
-            indicator.innerHTML = `
-                <svg class="w-3 h-3 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
-                <span class="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
-                    Ya asignado en ${campo.cantidad_articulos}/${campo.total_articulos} artículo(s) - Click para desasignar
-                </span>
-            `;
-            
-            const divContenido = container.querySelector('div:last-child');
-            divContenido.appendChild(indicator);
+            if (container) {
+                container.classList.add('bg-yellow-50', 'dark:bg-yellow-900', 'dark:bg-opacity-20', 'border-yellow-300', 'dark:border-yellow-700', 'border-2');
+                
+                // Agregar indicador visual
+                const indicator = document.createElement('div');
+                indicator.className = 'campo-ya-asignado mt-2 flex items-center space-x-1';
+                indicator.innerHTML = `
+                    <svg class="w-3 h-3 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
+                        Ya asignado en ${campo.cantidad_articulos}/${campo.total_articulos} artículo(s) - Click para desasignar
+                    </span>
+                `;
+                
+                const divContenido = container.querySelector('div:last-child');
+                if (divContenido) {
+                    divContenido.appendChild(indicator);
+                }
+            }
         }
     });
 }
@@ -468,12 +486,17 @@ function mostrarTab(tab) {
     });
     
     const btnActivo = document.getElementById(`tab-${tab}`);
-    btnActivo.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-    btnActivo.classList.add('active', 'bg-primary', 'bg-opacity-10', 'dark:bg-primary-neon', 'dark:bg-opacity-20', 'text-primary', 'dark:text-primary-neon');
+    if (btnActivo) {
+        btnActivo.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        btnActivo.classList.add('active', 'bg-primary', 'bg-opacity-10', 'dark:bg-primary-neon', 'dark:bg-opacity-20', 'text-primary', 'dark:text-primary-neon');
+    }
     
     // Mostrar contenido
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-    document.getElementById(`contenido-${tab}`).classList.remove('hidden');
+    const contenido = document.getElementById(`contenido-${tab}`);
+    if (contenido) {
+        contenido.classList.remove('hidden');
+    }
 }
 
 function limpiarSeleccion() {
@@ -550,7 +573,7 @@ function asignarTareas() {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <span>${accion === 'desasignar' ? 'Desasignando...' : 'Asignando...'}</span>
+        <span class="ml-2">${accion === 'desasignar' ? 'Desasignando...' : 'Asignando...'}</span>
     `;
     
     // Preparar datos
@@ -562,6 +585,8 @@ function asignarTareas() {
         accion: accion
     };
     
+    console.log('📤 Enviando datos:', data);
+    
     // Enviar solicitud
     fetch(`/articulos/proyecto/{{ proyecto.id }}/asignar-campos/`, {
         method: 'POST',
@@ -572,14 +597,24 @@ function asignarTareas() {
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📥 Respuesta recibida:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('✅ Datos procesados:', data);
+        
         if (data.success) {
             mostrarNotificacion(data.mensaje, 'success');
             
             // Recargar artículos después de 1.5 segundos
             setTimeout(() => {
-                cargarArticulos(usuarioSeleccionadoId);
+                if (usuarioSeleccionadoId) {
+                    cargarArticulos(usuarioSeleccionadoId);
+                }
                 
                 // Limpiar selecciones
                 document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -592,26 +627,26 @@ function asignarTareas() {
         }
         
         // Restaurar botón
-        btnAsignar.disabled = false;
-        btnAsignar.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>Asignar Tareas</span>
-        `;
+        restaurarBotonAsignar();
     })
     .catch(error => {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al procesar la solicitud', 'error');
-        
+        console.error('❌ Error completo:', error);
+        mostrarNotificacion(`Error al procesar la solicitud: ${error.message}`, 'error');
+        restaurarBotonAsignar();
+    });
+}
+
+function restaurarBotonAsignar() {
+    const btnAsignar = document.getElementById('btn-asignar');
+    if (btnAsignar) {
         btnAsignar.disabled = false;
         btnAsignar.innerHTML = `
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            <span>Asignar Tareas</span>
+            <span class="ml-2">Asignar Tareas</span>
         `;
-    });
+    }
 }
 
 function mostrarNotificacion(mensaje, tipo) {
@@ -630,7 +665,9 @@ function mostrarNotificacion(mensaje, tipo) {
                     : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>'
                 }
             </svg>
-            <span>${mensaje}</span>
+            <div class="flex-1">
+                <p class="font-medium">${mensaje}</p>
+            </div>
         </div>
     `;
     
@@ -649,6 +686,7 @@ function mostrarNotificacion(mensaje, tipo) {
 
 // Inicializar con tab de plantillas activo
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Script de asignación de tareas cargado');
     mostrarTab('plantillas');
 });
 </script>
@@ -663,6 +701,11 @@ document.addEventListener('DOMContentLoaded', function() {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.articulo-checkbox:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
 }
 </style>
 {% endblock %}

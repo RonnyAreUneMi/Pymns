@@ -723,204 +723,6 @@ def cargar_articulos_usuario(request, proyecto_id, usuario_id):
     return JsonResponse({'articulos': articulos_data})
 
 
-@login_required
-def asignar_campos_articulos(request, proyecto_id):
-    """
-    Asigna o desasigna campos de búsqueda a artículos específicos.
-    MEJORA: Soporta reasignación a artículos APROBADOS (los vuelve a PENDIENTE)
-    """
-    
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
-    
-    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
-    
-    # Verificar rol
-    usuario_proyecto = UsuarioProyecto.objects.filter(
-        usuario=request.user,
-        proyecto=proyecto,
-        rol_proyecto='DUEÑO'
-    ).first()
-    
-    if not usuario_proyecto:
-        return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
-    
-    try:
-        data = json.loads(request.body)
-        articulos_ids = data.get('articulos_ids', [])
-        campos_ids = data.get('campos_ids', [])
-        usar_plantilla = data.get('usar_plantilla', False)
-        plantilla_id = data.get('plantilla_id')
-        accion = data.get('accion', 'asignar')  # 'asignar' o 'desasignar'
-        
-        if not articulos_ids:
-            return JsonResponse({'success': False, 'error': 'Debes seleccionar al menos un artículo'})
-        
-        # Si usa plantilla
-        if usar_plantilla and plantilla_id:
-            plantilla = get_object_or_404(PlantillaBusqueda, id=plantilla_id, proyecto=proyecto)
-            campos = plantilla.campos.all()
-            nombre_campos = f'plantilla "{plantilla.nombre}"'
-        else:
-            if not campos_ids:
-                return JsonResponse({'success': False, 'error': 'Debes seleccionar al menos un campo'})
-            campos = CampoMetanalisis.objects.filter(id__in=campos_ids, activo=True)
-            nombre_campos = f"{len(campos)} campo(s)"
-        
-        # Procesar asignación o desasignación
-        asignaciones_creadas = 0
-        asignaciones_eliminadas = 0
-        articulos_actualizados = []
-        articulos_reactivados = []  # 🆕 Para artículos APROBADOS que vuelven a PENDIENTE
-        
-        # Diccionario para agrupar artículos por usuario responsable
-        usuarios_articulos = {}
-        
-        for articulo_id in articulos_ids:
-            articulo = get_object_or_404(Articulo, id=articulo_id, proyecto=proyecto)
-            
-            if accion == 'desasignar':
-                # DESASIGNAR campos
-                for campo in campos:
-                    eliminados = AsignacionCampo.objects.filter(
-                        articulo=articulo,
-                        campo=campo
-                    ).delete()
-                    if eliminados[0] > 0:
-                        asignaciones_eliminadas += eliminados[0]
-                
-                # Si el artículo ya no tiene campos asignados, cambiar a EN_ESPERA
-                if not articulo.campos_asignados.exists():
-                    articulo.cambiar_estado('EN_ESPERA', usuario=request.user)
-                    articulos_actualizados.append(articulo.titulo[:30])
-                    
-            else:
-                # ASIGNAR campos
-                campos_nuevos = 0
-                for campo in campos:
-                    asignacion, created = AsignacionCampo.objects.get_or_create(
-                        articulo=articulo,
-                        campo=campo,
-                        defaults={'asignado_por': request.user}
-                    )
-                    if created:
-                        asignaciones_creadas += 1
-                        campos_nuevos += 1
-                
-                # 🔄 LÓGICA DE CAMBIO DE ESTADO MEJORADA
-                if campos_nuevos > 0:  # Solo si realmente se agregaron campos nuevos
-                    
-                    # Caso 1: EN_ESPERA → PENDIENTE (comportamiento original)
-                    if articulo.estado == 'EN_ESPERA':
-                        articulo.cambiar_estado('PENDIENTE', usuario=request.user)
-                        articulos_actualizados.append(articulo.titulo[:30])
-                    
-                    # Caso 2: APROBADO → PENDIENTE (🆕 NUEVO COMPORTAMIENTO)
-                    elif articulo.estado == 'APROBADO':
-                        articulo.cambiar_estado('PENDIENTE', usuario=request.user)
-                        articulos_reactivados.append(articulo.titulo[:30])
-                        
-                        # Registrar en historial que se reactivó
-                        HistorialArticulo.objects.create(
-                            articulo=articulo,
-                            usuario=request.user,
-                            tipo_cambio='ASIGNACION',
-                            valor_nuevo=f'Artículo reactivado: se asignaron {campos_nuevos} campos nuevos después de aprobación'
-                        )
-                        
-                        # 🔔 NOTIFICACIÓN ESPECIAL para reactivación
-                        usuario_responsable = articulo.usuario_asignado or articulo.usuario_carga
-                        if usuario_responsable and usuario_responsable.id != request.user.id:
-                            crear_notificacion_articulos(
-                                usuario=usuario_responsable,
-                                tipo='tarea_asignada',
-                                titulo=f'🔄 Artículo reactivado - {proyecto.nombre}',
-                                mensaje=f'El artículo "{articulo.titulo[:50]}..." que habías completado tiene {campos_nuevos} nuevos campos asignados. Los datos anteriores se mantienen.',
-                                url=reverse('articulos:workspace_articulo', args=[articulo.id]),
-                                proyecto=proyecto
-                            )
-            
-            # 🔑 Determinar usuario responsable para notificaciones de asignación normal
-            if accion == 'asignar' and articulo.estado not in ['APROBADO']:
-                usuario_responsable = articulo.usuario_asignado if articulo.usuario_asignado else articulo.usuario_carga
-                
-                if usuario_responsable and usuario_responsable.id != request.user.id:
-                    if usuario_responsable.id not in usuarios_articulos:
-                        usuarios_articulos[usuario_responsable.id] = {
-                            'usuario': usuario_responsable,
-                            'cantidad': 0,
-                            'articulos_titulos': []
-                        }
-                    usuarios_articulos[usuario_responsable.id]['cantidad'] += 1
-                    usuarios_articulos[usuario_responsable.id]['articulos_titulos'].append(articulo.titulo[:50])
-        
-        # 🔔 NOTIFICAR a cada usuario responsable (solo asignaciones normales)
-        usuarios_notificados = 0
-        if accion == 'asignar' and asignaciones_creadas > 0:
-            for user_id, info in usuarios_articulos.items():
-                usuario = info['usuario']
-                cantidad = info['cantidad']
-                
-                if cantidad == 1:
-                    mensaje = (
-                        f'{request.user.get_full_name() or request.user.username} te ha asignado '
-                        f'nuevas tareas en 1 artículo del proyecto "{proyecto.nombre}". '
-                        f'Haz clic para revisar tus tareas pendientes.'
-                    )
-                    titulo = f'📋 Nueva tarea asignada - {proyecto.nombre}'
-                else:
-                    mensaje = (
-                        f'{request.user.get_full_name() or request.user.username} te ha asignado '
-                        f'nuevas tareas en {cantidad} artículos del proyecto "{proyecto.nombre}". '
-                        f'Haz clic para revisar tus tareas pendientes.'
-                    )
-                    titulo = f'📋 {cantidad} nuevas tareas asignadas - {proyecto.nombre}'
-                
-                crear_notificacion_articulos(
-                    usuario=usuario,
-                    tipo='tarea_asignada',
-                    titulo=titulo,
-                    mensaje=mensaje,
-                    url=reverse('articulos:ver_articulos', args=[proyecto.id]),
-                    proyecto=proyecto
-                )
-                usuarios_notificados += 1
-        
-        # Construir mensaje de respuesta
-        if accion == 'desasignar':
-            mensaje_respuesta = f'Se desasignaron {asignaciones_eliminadas} campo(s) de {len(articulos_ids)} artículo(s).'
-            if articulos_actualizados:
-                mensaje_respuesta += f' {len(articulos_actualizados)} artículo(s) volvieron a estado EN ESPERA.'
-        else:
-            mensaje_respuesta = f'Se asignaron {asignaciones_creadas} campo(s) a {len(articulos_ids)} artículo(s).'
-            if articulos_actualizados:
-                mensaje_respuesta += f' {len(articulos_actualizados)} artículo(s) pasaron a estado PENDIENTE.'
-            if articulos_reactivados:
-                mensaje_respuesta += f' 🔄 {len(articulos_reactivados)} artículo(s) aprobados fueron reactivados con nuevas tareas.'
-            if usuarios_notificados > 0:
-                mensaje_respuesta += f' Se notificó a {usuarios_notificados} usuario(s).'
-        
-        print(f"📊 Resumen: Acción={accion} | Asignadas={asignaciones_creadas} | Eliminadas={asignaciones_eliminadas} | Reactivados={len(articulos_reactivados)}")
-        
-        return JsonResponse({
-            'success': True,
-            'mensaje': mensaje_respuesta,
-            'accion': accion,
-            'asignaciones_creadas': asignaciones_creadas,
-            'asignaciones_eliminadas': asignaciones_eliminadas,
-            'articulos_actualizados': len(articulos_actualizados),
-            'articulos_reactivados': len(articulos_reactivados),
-            'usuarios_notificados': usuarios_notificados
-        })
-    
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Error al procesar datos'}, status=400)
-    except Exception as e:
-        import traceback
-        print(f"❌ Error en asignar_campos_articulos: {str(e)}")
-        print(traceback.format_exc())
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
 
 @login_required
 def obtener_campos_asignados(request, proyecto_id):
@@ -1928,10 +1730,23 @@ def bandeja_revision(request, proyecto_id):
 @login_required
 def asignar_campos_articulos(request, proyecto_id):
     """
-    🆕 Protección mejorada: No sobrescribe campos ya aprobados
-    Asigna campos del metanálisis a uno o varios artículos
+    🎯 FUNCIÓN UNIFICADA: Asigna o desasigna campos a artículos
+    
+    Soporta DOS modos de operación:
+    1. AJAX (JSON) - Para interfaces modernas con JavaScript
+    2. FORMULARIO (POST) - Para formularios HTML tradicionales
+    
+    Características:
+    - ✅ Protege campos ya aprobados
+    - ✅ Soporta plantillas predefinidas
+    - ✅ Reactiva artículos APROBADOS cuando se asignan nuevos campos
+    - ✅ Sistema de notificaciones integrado
+    - ✅ Registro en historial
     """
+    
     if request.method != 'POST':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
         messages.error(request, 'Método no permitido')
         return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
     
@@ -1940,102 +1755,92 @@ def asignar_campos_articulos(request, proyecto_id):
     # Verificar acceso
     usuario_proyecto = UsuarioProyecto.objects.filter(
         usuario=request.user,
-        proyecto=proyecto
+        proyecto=proyecto,
+        rol_proyecto='DUEÑO'
     ).first()
     
     if not usuario_proyecto:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'No tienes permisos'}, status=403)
         messages.error(request, 'No tienes acceso a este proyecto.')
         return redirect('mis_proyectos')
     
+    # 🔍 DETECTAR TIPO DE REQUEST
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    content_type = request.headers.get('Content-Type', '')
+    es_json = 'application/json' in content_type
+    
     try:
-        # Obtener datos del formulario
-        articulos_ids = request.POST.getlist('articulos')
-        campos_ids = request.POST.getlist('campos')
-        accion = request.POST.get('accion', 'asignar')
+        # ==================== EXTRAER DATOS SEGÚN EL TIPO ====================
+        if is_ajax or es_json:
+            # 📡 MODO AJAX (JSON)
+            try:
+                data = json.loads(request.body)
+                articulos_ids = data.get('articulos_ids', [])
+                campos_ids = data.get('campos_ids', [])
+                usar_plantilla = data.get('usar_plantilla', False)
+                plantilla_id = data.get('plantilla_id')
+                accion = data.get('accion', 'asignar')
+            except json.JSONDecodeError:
+                return JsonResponse({'success': False, 'error': 'Error al procesar datos JSON'}, status=400)
+        else:
+            # 📝 MODO FORMULARIO (POST tradicional)
+            articulos_ids = request.POST.getlist('articulos')
+            campos_ids = request.POST.getlist('campos')
+            usar_plantilla = False
+            plantilla_id = None
+            accion = request.POST.get('accion', 'asignar')
         
+        # ==================== VALIDACIONES ====================
         if not articulos_ids:
-            messages.warning(request, 'Debes seleccionar al menos un artículo.')
+            error_msg = 'Debes seleccionar al menos un artículo'
+            if is_ajax or es_json:
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.warning(request, error_msg)
             return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
         
-        if not campos_ids and accion == 'asignar':
-            messages.warning(request, 'Debes seleccionar al menos un campo.')
-            return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
+        # ==================== OBTENER CAMPOS ====================
+        if usar_plantilla and plantilla_id:
+            # Usar plantilla
+            plantilla = get_object_or_404(PlantillaBusqueda, id=plantilla_id, proyecto=proyecto)
+            campos = plantilla.campos.all()
+            nombre_campos = f'plantilla "{plantilla.nombre}"'
+        else:
+            # Usar campos seleccionados
+            if not campos_ids and accion == 'asignar':
+                error_msg = 'Debes seleccionar al menos un campo'
+                if is_ajax or es_json:
+                    return JsonResponse({'success': False, 'error': error_msg})
+                messages.warning(request, error_msg)
+                return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
+            
+            campos = CampoMetanalisis.objects.filter(id__in=campos_ids, activo=True) if accion == 'asignar' else []
+            nombre_campos = f"{len(campos)} campo(s)"
         
-        # Obtener artículos y campos
-        articulos = Articulo.objects.filter(
-            id__in=articulos_ids,
-            proyecto=proyecto
-        )
-        
-        campos = CampoMetanalisis.objects.filter(
-            id__in=campos_ids,
-            proyecto=proyecto
-        ) if accion == 'asignar' else []
-        
+        # ==================== PROCESAR ARTÍCULOS ====================
         asignaciones_creadas = 0
         asignaciones_eliminadas = 0
         campos_protegidos = 0
-        articulos_actualizados = 0
+        articulos_actualizados = []
+        articulos_reactivados = []
+        usuarios_articulos = {}
         
-        for articulo in articulos:
-            campos_nuevos = 0
-            campos_protegidos_articulo = 0
+        for articulo_id in articulos_ids:
+            articulo = get_object_or_404(Articulo, id=articulo_id, proyecto=proyecto)
             
-            if accion == 'asignar':
-                # ASIGNAR CAMPOS
-                for campo in campos:
-                    # 🆕 Verificar si ya existe y está aprobado
-                    asignacion_existente = AsignacionCampo.objects.filter(
-                        articulo=articulo,
-                        campo=campo
-                    ).first()
-                    
-                    if asignacion_existente:
-                        if asignacion_existente.aprobado:
-                            # ⚠️ Campo ya aprobado, no tocar
-                            campos_protegidos += 1
-                            campos_protegidos_articulo += 1
-                            continue
-                        else:
-                            # Campo existe pero no está aprobado, no crear duplicado
-                            continue
-                    
-                    # Crear nueva asignación solo si no existe
-                    AsignacionCampo.objects.create(
-                        articulo=articulo,
-                        campo=campo,
-                        asignado_por=request.user
-                    )
-                    asignaciones_creadas += 1
-                    campos_nuevos += 1
-                
-                # Cambiar estado del artículo si estaba EN_ESPERA
-                if articulo.estado == 'EN_ESPERA' and campos_nuevos > 0:
-                    articulo.cambiar_estado('PENDIENTE', usuario=request.user)
-                    articulos_actualizados += 1
-                
-                # Registrar en historial si hubo cambios
-                if campos_nuevos > 0:
-                    mensaje_historial = f'{campos_nuevos} campo(s) asignado(s) por {request.user.get_full_name() or request.user.username}'
-                    if campos_protegidos_articulo > 0:
-                        mensaje_historial += f' ({campos_protegidos_articulo} campo(s) protegido(s) por aprobación)'
-                    
-                    HistorialArticulo.objects.create(
-                        articulo=articulo,
-                        usuario=request.user,
-                        tipo_cambio='ASIGNACION_CAMPOS',
-                        valor_nuevo=mensaje_historial
-                    )
-            
-            elif accion == 'desasignar':
-                # DESASIGNAR CAMPOS (todos los del artículo)
-                # 🆕 Solo eliminar campos NO aprobados
+            if accion == 'desasignar':
+                # ==================== DESASIGNAR CAMPOS ====================
+                # Solo eliminar campos NO aprobados
                 asignaciones_a_eliminar = AsignacionCampo.objects.filter(
                     articulo=articulo,
-                    aprobado=False  # Solo los no aprobados
+                    aprobado=False
                 )
                 
-                # Contar campos aprobados que no se pueden eliminar
+                if campos:
+                    # Si hay campos específicos, filtrar por ellos
+                    asignaciones_a_eliminar = asignaciones_a_eliminar.filter(campo__in=campos)
+                
+                # Contar campos aprobados protegidos
                 campos_aprobados_count = AsignacionCampo.objects.filter(
                     articulo=articulo,
                     aprobado=True
@@ -2048,16 +1853,16 @@ def asignar_campos_articulos(request, proyecto_id):
                 asignaciones_a_eliminar.delete()
                 asignaciones_eliminadas += count_eliminados
                 
-                # Si quedan campos aprobados, mantener estado
                 # Si no quedan campos, volver a EN_ESPERA
                 if not articulo.campos_asignados.exists():
                     articulo.cambiar_estado('EN_ESPERA', usuario=request.user)
+                    articulos_actualizados.append(articulo.titulo[:30])
                 
                 # Registrar en historial
-                if count_eliminados > 0 or campos_aprobados_count > 0:
+                if count_eliminados > 0:
                     mensaje_historial = f'{count_eliminados} campo(s) desasignado(s)'
                     if campos_aprobados_count > 0:
-                        mensaje_historial += f' ({campos_aprobados_count} campo(s) aprobado(s) mantenido(s))'
+                        mensaje_historial += f' ({campos_aprobados_count} protegido(s))'
                     
                     HistorialArticulo.objects.create(
                         articulo=articulo,
@@ -2065,39 +1870,184 @@ def asignar_campos_articulos(request, proyecto_id):
                         tipo_cambio='DESASIGNACION_CAMPOS',
                         valor_nuevo=mensaje_historial
                     )
-        
-        # Mensajes de feedback
-        if accion == 'asignar':
-            if asignaciones_creadas > 0:
-                mensaje = f'✅ Se asignaron {asignaciones_creadas} campo(s) exitosamente'
-                if campos_protegidos > 0:
-                    mensaje += f'. {campos_protegidos} campo(s) aprobado(s) no fueron modificado(s)'
-                if articulos_actualizados > 0:
-                    mensaje += f'. {articulos_actualizados} artículo(s) cambiaron a estado PENDIENTE'
-                messages.success(request, mensaje)
-            elif campos_protegidos > 0:
-                messages.warning(request, f'⚠️ No se realizaron cambios. {campos_protegidos} campo(s) ya estaban aprobado(s) y están protegido(s).')
+                    
             else:
-                messages.info(request, 'ℹ️ No se realizaron cambios. Los campos seleccionados ya estaban asignados.')
+                # ==================== ASIGNAR CAMPOS ====================
+                campos_nuevos = 0
+                campos_protegidos_articulo = 0
+                
+                for campo in campos:
+                    # Verificar si ya existe
+                    asignacion_existente = AsignacionCampo.objects.filter(
+                        articulo=articulo,
+                        campo=campo
+                    ).first()
+                    
+                    if asignacion_existente:
+                        if asignacion_existente.aprobado:
+                            # ⚠️ Campo aprobado, no tocar
+                            campos_protegidos += 1
+                            campos_protegidos_articulo += 1
+                            continue
+                        else:
+                            # Ya existe pero no está aprobado
+                            continue
+                    
+                    # Crear nueva asignación
+                    AsignacionCampo.objects.create(
+                        articulo=articulo,
+                        campo=campo,
+                        asignado_por=request.user
+                    )
+                    asignaciones_creadas += 1
+                    campos_nuevos += 1
+                
+                # 🔄 CAMBIO DE ESTADO
+                if campos_nuevos > 0:
+                    # Caso 1: EN_ESPERA → PENDIENTE
+                    if articulo.estado == 'EN_ESPERA':
+                        articulo.cambiar_estado('PENDIENTE', usuario=request.user)
+                        articulos_actualizados.append(articulo.titulo[:30])
+                    
+                    # Caso 2: APROBADO → PENDIENTE (REACTIVACIÓN)
+                    elif articulo.estado == 'APROBADO':
+                        articulo.cambiar_estado('PENDIENTE', usuario=request.user)
+                        articulos_reactivados.append(articulo.titulo[:30])
+                        
+                        HistorialArticulo.objects.create(
+                            articulo=articulo,
+                            usuario=request.user,
+                            tipo_cambio='ASIGNACION',
+                            valor_nuevo=f'Artículo reactivado: {campos_nuevos} campos nuevos después de aprobación'
+                        )
+                        
+                        # 🔔 NOTIFICACIÓN ESPECIAL para reactivación
+                        usuario_responsable = articulo.usuario_asignado or articulo.usuario_carga
+                        if usuario_responsable and usuario_responsable.id != request.user.id:
+                            crear_notificacion_articulos(
+                                usuario=usuario_responsable,
+                                tipo='tarea_asignada',
+                                titulo=f'🔄 Artículo reactivado - {proyecto.nombre}',
+                                mensaje=f'El artículo "{articulo.titulo[:50]}..." que habías completado tiene {campos_nuevos} nuevos campos asignados.',
+                                url=reverse('articulos:workspace_articulo', args=[articulo.id]),
+                                proyecto=proyecto
+                            )
+                    
+                    # Registrar en historial (solo cambios normales)
+                    elif articulo.estado not in ['APROBADO']:
+                        mensaje_historial = f'{campos_nuevos} campo(s) asignado(s)'
+                        if campos_protegidos_articulo > 0:
+                            mensaje_historial += f' ({campos_protegidos_articulo} protegido(s))'
+                        
+                        HistorialArticulo.objects.create(
+                            articulo=articulo,
+                            usuario=request.user,
+                            tipo_cambio='ASIGNACION_CAMPOS',
+                            valor_nuevo=mensaje_historial
+                        )
+                
+                # 🔑 Preparar notificaciones (solo asignaciones normales)
+                if campos_nuevos > 0 and articulo.estado not in ['APROBADO']:
+                    usuario_responsable = articulo.usuario_asignado or articulo.usuario_carga
+                    
+                    if usuario_responsable and usuario_responsable.id != request.user.id:
+                        if usuario_responsable.id not in usuarios_articulos:
+                            usuarios_articulos[usuario_responsable.id] = {
+                                'usuario': usuario_responsable,
+                                'cantidad': 0,
+                                'articulos_titulos': []
+                            }
+                        usuarios_articulos[usuario_responsable.id]['cantidad'] += 1
+                        usuarios_articulos[usuario_responsable.id]['articulos_titulos'].append(articulo.titulo[:50])
         
-        elif accion == 'desasignar':
-            if asignaciones_eliminadas > 0:
-                mensaje = f'✅ Se desasignaron {asignaciones_eliminadas} campo(s) exitosamente'
-                if campos_protegidos > 0:
-                    mensaje += f'. {campos_protegidos} campo(s) aprobado(s) fueron mantenido(s)'
-                messages.success(request, mensaje)
-            elif campos_protegidos > 0:
-                messages.warning(request, f'⚠️ No se eliminaron campos. {campos_protegidos} campo(s) están aprobado(s) y protegido(s).')
+        # 🔔 ENVIAR NOTIFICACIONES (solo asignaciones normales)
+        usuarios_notificados = 0
+        if accion == 'asignar' and asignaciones_creadas > 0:
+            for user_id, info in usuarios_articulos.items():
+                usuario = info['usuario']
+                cantidad = info['cantidad']
+                
+                if cantidad == 1:
+                    mensaje = f'{request.user.get_full_name() or request.user.username} te ha asignado nuevas tareas en 1 artículo.'
+                    titulo = f'📋 Nueva tarea asignada - {proyecto.nombre}'
+                else:
+                    mensaje = f'{request.user.get_full_name() or request.user.username} te ha asignado nuevas tareas en {cantidad} artículos.'
+                    titulo = f'📋 {cantidad} nuevas tareas asignadas - {proyecto.nombre}'
+                
+                crear_notificacion_articulos(
+                    usuario=usuario,
+                    tipo='tarea_asignada',
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    url=reverse('articulos:ver_articulos', args=[proyecto.id]),
+                    proyecto=proyecto
+                )
+                usuarios_notificados += 1
+        
+        # ==================== CONSTRUIR RESPUESTA ====================
+        if accion == 'desasignar':
+            mensaje_respuesta = f'Se desasignaron {asignaciones_eliminadas} campo(s) de {len(articulos_ids)} artículo(s).'
+            if campos_protegidos > 0:
+                mensaje_respuesta += f' {campos_protegidos} campo(s) aprobado(s) fueron protegido(s).'
+            if articulos_actualizados:
+                mensaje_respuesta += f' {len(articulos_actualizados)} artículo(s) volvieron a EN ESPERA.'
+        else:
+            mensaje_respuesta = f'Se asignaron {asignaciones_creadas} campo(s) a {len(articulos_ids)} artículo(s).'
+            if campos_protegidos > 0:
+                mensaje_respuesta += f' {campos_protegidos} campo(s) ya estaban aprobado(s).'
+            if articulos_actualizados:
+                mensaje_respuesta += f' {len(articulos_actualizados)} artículo(s) pasaron a PENDIENTE.'
+            if articulos_reactivados:
+                mensaje_respuesta += f' 🔄 {len(articulos_reactivados)} artículo(s) aprobados fueron reactivados.'
+            if usuarios_notificados > 0:
+                mensaje_respuesta += f' Se notificó a {usuarios_notificados} usuario(s).'
+        
+        print(f"📊 Resumen: Acción={accion} | Asignadas={asignaciones_creadas} | Eliminadas={asignaciones_eliminadas} | Reactivados={len(articulos_reactivados)} | Protegidos={campos_protegidos}")
+        
+        # ==================== DEVOLVER RESPUESTA SEGÚN TIPO ====================
+        if is_ajax or es_json:
+            # 📡 RESPUESTA AJAX (JSON)
+            return JsonResponse({
+                'success': True,
+                'mensaje': mensaje_respuesta,
+                'accion': accion,
+                'asignaciones_creadas': asignaciones_creadas,
+                'asignaciones_eliminadas': asignaciones_eliminadas,
+                'campos_protegidos': campos_protegidos,
+                'articulos_actualizados': len(articulos_actualizados),
+                'articulos_reactivados': len(articulos_reactivados),
+                'usuarios_notificados': usuarios_notificados
+            })
+        else:
+            # 📝 RESPUESTA FORMULARIO (Redirect con mensaje)
+            if accion == 'asignar':
+                if asignaciones_creadas > 0:
+                    messages.success(request, f'✅ {mensaje_respuesta}')
+                elif campos_protegidos > 0:
+                    messages.warning(request, f'⚠️ {mensaje_respuesta}')
+                else:
+                    messages.info(request, 'ℹ️ No se realizaron cambios. Los campos ya estaban asignados.')
             else:
-                messages.info(request, 'ℹ️ No había campos asignados para eliminar.')
-        
-        return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
+                if asignaciones_eliminadas > 0:
+                    messages.success(request, f'✅ {mensaje_respuesta}')
+                elif campos_protegidos > 0:
+                    messages.warning(request, f'⚠️ {mensaje_respuesta}')
+                else:
+                    messages.info(request, 'ℹ️ No había campos para eliminar.')
+            
+            return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
     
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         print(f"❌ Error en asignar_campos_articulos: {str(e)}")
-        messages.error(request, f'Error al procesar la asignación: {str(e)}')
-        return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
-
+        print(error_trace)
+        
+        if is_ajax or es_json:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        else:
+            messages.error(request, f'Error al procesar la asignación: {str(e)}')
+            return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
 
 @login_required
 def estadisticas_articulo(request, articulo_id):
