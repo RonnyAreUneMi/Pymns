@@ -74,27 +74,48 @@ def ver_articulos(request, proyecto_id):
         except KeyError:
             pass
 
-    # Obtener todos los artículos del proyecto
-    articulos = Articulo.objects.filter(proyecto=proyecto).order_by('-fecha_carga')
+    # Obtener filtros
+    estado_filtro = request.GET.get('estado', '')
+    usuario_filtro = request.GET.get('usuario', '')
     
-    # Separar artículos con y sin archivo BIB
+    # Query base
+    articulos = Articulo.objects.filter(proyecto=proyecto)
+    
+    # Aplicar filtros
+    if estado_filtro:
+        articulos = articulos.filter(estado=estado_filtro)
+    
+    if usuario_filtro:
+        articulos = articulos.filter(
+            Q(usuario_asignado_id=usuario_filtro) | Q(usuario_carga_id=usuario_filtro)
+        )
+    
+    articulos = articulos.order_by('-fecha_carga')
+    
+    # Separar artículos con y sin archivo BIB (para el template actual)
     articulos_con_bib = articulos.filter(archivo_bib__isnull=False).exclude(archivo_bib='')
     articulos_sin_bib = articulos.filter(Q(archivo_bib__isnull=True) | Q(archivo_bib=''))
     
     # Calcular estadísticas por estado
-    total_articulos = articulos.count()
-    articulos_en_espera = articulos.filter(estado='EN_ESPERA').count()
-    articulos_pendientes = articulos.filter(estado='PENDIENTE').count()
-    articulos_en_proceso = articulos.filter(estado='EN_PROCESO').count()
-    articulos_en_revision = articulos.filter(estado='EN_REVISION').count()
-    articulos_aprobados = articulos.filter(estado='APROBADO').count()
+    total_articulos = Articulo.objects.filter(proyecto=proyecto).count()
+    articulos_en_espera = Articulo.objects.filter(proyecto=proyecto, estado='EN_ESPERA').count()
+    articulos_pendientes = Articulo.objects.filter(proyecto=proyecto, estado='PENDIENTE').count()
+    articulos_en_proceso = Articulo.objects.filter(proyecto=proyecto, estado='EN_PROCESO').count()
+    articulos_en_revision = Articulo.objects.filter(proyecto=proyecto, estado='EN_REVISION').count()
+    articulos_aprobados = Articulo.objects.filter(proyecto=proyecto, estado='APROBADO').count()
+
+    # Obtener colaboradores para filtro
+    colaboradores = UsuarioProyecto.objects.filter(
+        proyecto=proyecto
+    ).select_related('usuario').order_by('usuario__first_name', 'usuario__username')
 
     context = {
         'proyecto': proyecto,
-        'articulos': articulos,  # Todos los artículos para el regroup
+        'articulos': articulos,  # Todos los artículos filtrados
         'articulos_con_bib': articulos_con_bib,
         'articulos_sin_bib': articulos_sin_bib,
         'usuario_proyecto': usuario_proyecto,
+        'colaboradores': colaboradores,
         # Estadísticas
         'total_articulos': total_articulos,
         'articulos_en_espera': articulos_en_espera,
@@ -102,6 +123,9 @@ def ver_articulos(request, proyecto_id):
         'articulos_en_proceso': articulos_en_proceso,
         'articulos_en_revision': articulos_en_revision,
         'articulos_aprobados': articulos_aprobados,
+        # Filtros actuales
+        'estado_filtro': estado_filtro,
+        'usuario_filtro': usuario_filtro,
     }
 
     return render(request, 'ver_articulos.html', context)
@@ -682,16 +706,20 @@ def asignar_tareas(request, proyecto_id):
 
 @login_required
 def cargar_articulos_usuario(request, proyecto_id, usuario_id):
-    """AJAX: Carga los artículos de un usuario específico del proyecto"""
+    """AJAX: Carga los artículos de un usuario específico del proyecto
+    
+    🆕 MEJORA: Ahora incluye TODOS los estados para permitir reasignación
+    de campos a artículos ya aprobados o en revisión
+    """
     
     proyecto = get_object_or_404(Proyecto, id=proyecto_id)
     usuario = get_object_or_404(User, id=usuario_id)
     
-    # Obtener artículos del usuario
+    # 🆕 PERMITIR TODOS LOS ESTADOS (incluyendo APROBADO, EN_REVISION, EN_PROCESO)
+    # para poder asignar nuevos campos a artículos ya completados
     articulos = Articulo.objects.filter(
         Q(proyecto=proyecto),
-        Q(usuario_asignado=usuario) | Q(usuario_carga=usuario),
-        estado__in=['EN_ESPERA', 'PENDIENTE']
+        Q(usuario_asignado=usuario) | Q(usuario_carga=usuario)
     ).prefetch_related(
         Prefetch(
             'campos_asignados',
@@ -701,14 +729,22 @@ def cargar_articulos_usuario(request, proyecto_id, usuario_id):
     
     articulos_data = []
     for art in articulos:
-        campos_asignados = [
-            {
+        # 🆕 Incluir información detallada sobre campos asignados y aprobados
+        campos_asignados_info = []
+        campos_aprobados = []
+        
+        for ca in art.campos_asignados.all():
+            campo_info = {
                 'id': ca.campo.id,
                 'nombre': ca.campo.nombre,
-                'completado': ca.completado
+                'completado': ca.completado,
+                'aprobado': ca.aprobado  # 🆕 Agregar info de aprobación
             }
-            for ca in art.campos_asignados.all()
-        ]
+            campos_asignados_info.append(campo_info)
+            
+            # 🆕 Separar campos que ya están aprobados
+            if ca.aprobado:
+                campos_aprobados.append(campo_info)
         
         articulos_data.append({
             'id': art.id,
@@ -716,8 +752,13 @@ def cargar_articulos_usuario(request, proyecto_id, usuario_id):
             'estado': art.estado,
             'estado_display': art.get_estado_display(),
             'fecha_carga': art.fecha_carga.strftime('%d/%m/%Y'),
-            'campos_asignados': campos_asignados,
-            'tiene_campos': len(campos_asignados) > 0
+            'campos_asignados': campos_asignados_info,
+            'campos_aprobados': campos_aprobados,  
+            'tiene_campos': len(campos_asignados_info) > 0,
+            'es_aprobado': art.estado == 'APROBADO',  
+            'total_campos': len(campos_asignados_info),
+            'total_aprobados': len(campos_aprobados),
+            'total_completados': len([c for c in campos_asignados_info if c['completado']])
         })
     
     return JsonResponse({'articulos': articulos_data})
@@ -993,6 +1034,11 @@ def workspace_articulo(request, articulo_id):
     Roles:
     - COLABORADOR: Solo sus artículos asignados, envía a revisión
     - SUPERVISOR/DUEÑO: Todos los artículos, puede aprobar directamente
+    
+    🆕 Mejoras:
+    - Separa campos bloqueados (aprobados) de editables
+    - Detecta si el artículo fue reactivado después de aprobación
+    - Permite trabajar en artículos APROBADOS con nuevos campos
     """
     articulo = get_object_or_404(Articulo, id=articulo_id)
     proyecto = articulo.proyecto
@@ -1016,7 +1062,7 @@ def workspace_articulo(request, articulo_id):
             messages.error(request, 'No tienes permiso para acceder a este artículo.')
             return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
     
-    # Verificar estado del artículo
+    # 🆕 PERMITIR acceso a artículos EN_ESPERA pero mostrar mensaje
     if articulo.estado == 'EN_ESPERA':
         messages.warning(request, 'Este artículo aún no tiene tareas asignadas.')
         return redirect('articulos:ver_articulos', proyecto_id=proyecto.id)
@@ -1025,6 +1071,10 @@ def workspace_articulo(request, articulo_id):
     campos_asignados = AsignacionCampo.objects.filter(
         articulo=articulo
     ).select_related('campo', 'asignado_por').order_by('campo__categoria', 'campo__nombre')
+    
+    # 🆕 SEPARAR campos aprobados (bloqueados) de pendientes/editables
+    campos_bloqueados = campos_asignados.filter(aprobado=True).order_by('campo__categoria', 'campo__nombre')
+    campos_editables = campos_asignados.filter(aprobado=False).order_by('campo__categoria', 'campo__nombre')
     
     # Obtener historial de cambios
     historial = HistorialArticulo.objects.filter(
@@ -1043,26 +1093,103 @@ def workspace_articulo(request, articulo_id):
     progreso_porcentaje = (campos_completados / total_campos * 100) if total_campos > 0 else 0
     progreso_aprobacion = (campos_aprobados / campos_completados * 100) if campos_completados > 0 else 0
     
+    # 🆕 Detectar si es un artículo reactivado (tiene campos aprobados pero está en PENDIENTE/EN_PROCESO)
+    articulo_reactivado = (
+        articulo.estado in ['PENDIENTE', 'EN_PROCESO'] and 
+        campos_bloqueados.exists()
+    )
+    
+    # 🆕 Estadísticas adicionales para campos bloqueados vs editables
+    total_campos_bloqueados = campos_bloqueados.count()
+    total_campos_editables = campos_editables.count()
+    campos_editables_completados = campos_editables.filter(completado=True).count()
+    progreso_editables = (campos_editables_completados / total_campos_editables * 100) if total_campos_editables > 0 else 0
+    
+    # 🆕 Agrupar campos bloqueados por categoría
+    from itertools import groupby
+    from operator import attrgetter
+    
+    campos_bloqueados_agrupados = []
+    for categoria, items in groupby(campos_bloqueados, key=lambda x: x.campo.get_categoria_display()):
+        campos_bloqueados_agrupados.append({
+            'categoria': categoria,
+            'campos': list(items)
+        })
+    
+    # 🆕 Agrupar campos editables por categoría
+    campos_editables_agrupados = []
+    for categoria, items in groupby(campos_editables, key=lambda x: x.campo.get_categoria_display()):
+        campos_editables_agrupados.append({
+            'categoria': categoria,
+            'campos': list(items)
+        })
+    
+    # 🆕 Mensaje informativo para colaboradores en artículos reactivados
+    mensaje_reactivacion = None
+    if articulo_reactivado and not es_supervisor_o_dueno:
+        mensaje_reactivacion = (
+            f"Este artículo fue aprobado anteriormente con {total_campos_bloqueados} campo(s) ya completado(s). "
+            f"Se han agregado {total_campos_editables} nuevo(s) campo(s) que debes completar. "
+            f"Los campos ya aprobados permanecen bloqueados y visibles solo como referencia."
+        )
+    elif articulo_reactivado and es_supervisor_o_dueno:
+        mensaje_reactivacion = (
+            f"Este artículo tiene {total_campos_bloqueados} campo(s) ya aprobado(s). "
+            f"Se agregaron {total_campos_editables} campo(s) nuevo(s) que el colaborador debe completar."
+        )
+    
     context = {
         'articulo': articulo,
         'proyecto': proyecto,
         'usuario_proyecto': usuario_proyecto,
         'es_supervisor_o_dueno': es_supervisor_o_dueno,
+        
+        # 🔹 CAMPOS COMPLETOS (para compatibilidad con templates existentes)
         'campos_asignados': campos_asignados,
+        
+        # 🆕 CAMPOS SEPARADOS por estado
+        'campos_bloqueados': campos_bloqueados,
+        'campos_editables': campos_editables,
+        'campos_bloqueados_agrupados': campos_bloqueados_agrupados,
+        'campos_editables_agrupados': campos_editables_agrupados,
+        
+        # Historial y comentarios
         'historial': historial,
         'comentarios': comentarios,
+        
+        # 🔹 ESTADÍSTICAS GENERALES
         'total_campos': total_campos,
         'campos_completados': campos_completados,
         'campos_aprobados': campos_aprobados,
         'progreso_porcentaje': round(progreso_porcentaje, 1),
         'progreso_aprobacion': round(progreso_aprobacion, 1),
+        
+        # 🆕 ESTADÍSTICAS POR TIPO DE CAMPO
+        'total_campos_bloqueados': total_campos_bloqueados,
+        'total_campos_editables': total_campos_editables,
+        'campos_editables_completados': campos_editables_completados,
+        'progreso_editables': round(progreso_editables, 1),
+        
+        # 🔹 PERMISOS
         'puede_editar': articulo.estado not in ['APROBADO'],
         'puede_aprobar': es_supervisor_o_dueno,
         'puede_enviar_revision': articulo.estado in ['PENDIENTE', 'EN_PROCESO'],
+        
+        # 🆕 INDICADORES DE ESTADO ESPECIAL
+        'articulo_reactivado': articulo_reactivado,
+        'mensaje_reactivacion': mensaje_reactivacion,
+        
+        # 🆕 INDICADOR: ¿Puede completarse con solo campos editables?
+        'puede_completar_solo_editables': (
+            total_campos_editables > 0 and 
+            campos_editables_completados == total_campos_editables
+        ),
+        
+        # 🆕 INDICADOR: Mostrar sección de campos bloqueados
+        'mostrar_campos_bloqueados': campos_bloqueados.exists(),
     }
     
     return render(request, 'workspace.html', context)
-
 
 # ==================== GUARDAR CAMPO (AJAX) ====================
 
@@ -1682,11 +1809,15 @@ def bandeja_revision(request, proyecto_id):
             Q(usuario_asignado_id=usuario_filtro) | Q(usuario_carga_id=usuario_filtro)
         )
     
-    # Prefetch relacionados
+    # Prefetch relacionados y anotar estadísticas
     articulos = articulos.select_related(
         'usuario_carga', 'usuario_asignado'
     ).prefetch_related(
         'campos_asignados__campo'
+    ).annotate(
+        total_campos=Count('campos_asignados'),
+        campos_completados_count=Count('campos_asignados', filter=Q(campos_asignados__completado=True)),
+        campos_aprobados_count=Count('campos_asignados', filter=Q(campos_asignados__aprobado=True))
     ).order_by('-fecha_actualizacion')
     
     # Calcular estadísticas

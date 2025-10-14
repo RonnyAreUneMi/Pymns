@@ -342,6 +342,8 @@ function cargarArticulos(usuarioId) {
     });
 }
 
+<!-- REEMPLAZAR LA FUNCIÓN mostrarArticulos() en el <script> -->
+
 function mostrarArticulos(articulos) {
     const container = document.getElementById('lista-articulos');
     
@@ -357,41 +359,108 @@ function mostrarArticulos(articulos) {
         return;
     }
     
-    container.innerHTML = articulos.map(art => `
-        <label class="flex items-start p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer rounded-lg">
-            <input type="checkbox" name="articulos" value="${art.id}" class="mt-1 w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded articulo-checkbox" onchange="actualizarCamposAsignados()">
-            <div class="ml-4 flex-1">
-                <div class="flex items-start justify-between">
-                    <h4 class="font-medium text-gray-900 dark:text-white line-clamp-2">${art.titulo}</h4>
-                    <span class="ml-2 px-2 py-1 text-xs rounded-full flex-shrink-0 ${
-                        art.estado === 'EN_ESPERA' 
-                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300'
-                    }">
-                        ${art.estado_display}
+    container.innerHTML = articulos.map(art => {
+        // 🆕 Determinar color del badge según estado
+        let badgeClass = '';
+        let badgeIcon = '';
+        
+        switch(art.estado) {
+            case 'EN_ESPERA':
+                badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                break;
+            case 'PENDIENTE':
+                badgeClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300';
+                break;
+            case 'EN_PROCESO':
+                badgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-30 dark:text-blue-300';
+                break;
+            case 'EN_REVISION':
+                badgeClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:bg-opacity-30 dark:text-purple-300';
+                break;
+            case 'APROBADO':
+                badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-300';
+                badgeIcon = `
+                    <svg class="w-3 h-3 inline-block mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                `;
+                break;
+            default:
+                badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        }
+        
+        // 🆕 Alerta especial para artículos APROBADOS
+        const alertaAprobado = art.es_aprobado ? `
+            <div class="mt-3 p-3 bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-l-4 border-green-500 rounded">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-green-800 dark:text-green-300">✅ Artículo ya aprobado</p>
+                        <p class="text-xs text-green-700 dark:text-green-400 mt-1">
+                            ${art.campos_aprobados ? art.campos_aprobados.length : 0} campo(s) completados y aprobados. 
+                            Al asignar nuevos campos, el artículo volverá a estado <strong>PENDIENTE</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        ` : '';
+        
+        // 🆕 Información de campos asignados mejorada
+        const infoCampos = art.tiene_campos ? `
+            <div class="mt-2">
+                <div class="flex items-center space-x-2 mb-2">
+                    <svg class="w-4 h-4 ${art.es_aprobado ? 'text-green-500' : 'text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        ${art.campos_asignados.length} campo(s) ${art.es_aprobado ? 'aprobado(s)' : 'asignado(s)'}:
                     </span>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Cargado: ${art.fecha_carga}</p>
-                ${art.tiene_campos ? `
-                    <div class="mt-2">
-                        <div class="flex items-center space-x-2 mb-2">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">${art.campos_asignados.length} campo(s) asignado(s):</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1">
-                            ${art.campos_asignados.map(campo => `
-                                <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300 rounded-full">
-                                    ${campo.nombre}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
+                <div class="flex flex-wrap gap-1">
+                    ${art.campos_asignados.map(campo => `
+                        <span class="px-2 py-0.5 text-xs ${
+                            campo.completado 
+                                ? 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300' 
+                                : 'bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-800 dark:text-blue-300'
+                        } rounded-full flex items-center">
+                            ${campo.completado ? `
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            ` : ''}
+                            ${campo.nombre}
+                        </span>
+                    `).join('')}
+                </div>
             </div>
-        </label>
-    `).join('');
+        ` : '';
+        
+        return `
+            <label class="flex items-start p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer rounded-lg ${
+                art.es_aprobado ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-10' : ''
+            }">
+                <input type="checkbox" 
+                       name="articulos" 
+                       value="${art.id}" 
+                       data-estado="${art.estado}"
+                       class="mt-1 w-5 h-5 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded articulo-checkbox" 
+                       onchange="actualizarCamposAsignados()">
+                <div class="ml-4 flex-1">
+                    <div class="flex items-start justify-between">
+                        <h4 class="font-medium text-gray-900 dark:text-white line-clamp-2">${art.titulo}</h4>
+                        <span class="ml-2 px-2 py-1 text-xs rounded-full flex-shrink-0 ${badgeClass}">
+                            ${badgeIcon}${art.estado_display}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Cargado: ${art.fecha_carga}</p>
+                    ${alertaAprobado}
+                    ${infoCampos}
+                </div>
+            </label>
+        `;
+    }).join('');
     
     // Actualizar vista de campos asignados después de mostrar artículos
     actualizarCamposAsignados();
@@ -519,14 +588,22 @@ function limpiarSeleccion() {
     marcarCamposAsignados();
 }
 
+<!-- REEMPLAZAR LA FUNCIÓN asignarTareas() en el <script> -->
+
 function asignarTareas() {
     // Validar artículos seleccionados
-    const articulosSeleccionados = Array.from(document.querySelectorAll('.articulo-checkbox:checked')).map(cb => cb.value);
+    const articulosSeleccionados = Array.from(document.querySelectorAll('.articulo-checkbox:checked')).map(cb => ({
+        id: cb.value,
+        estado: cb.dataset.estado
+    }));
     
     if (articulosSeleccionados.length === 0) {
         mostrarNotificacion('Debes seleccionar al menos un artículo', 'error');
         return;
     }
+    
+    // 🆕 DETECTAR artículos APROBADOS
+    const articulosAprobados = articulosSeleccionados.filter(a => a.estado === 'APROBADO');
     
     // Validar campos o plantilla
     const plantillaSeleccionada = document.querySelector('input[name="plantilla"]:checked');
@@ -548,14 +625,35 @@ function asignarTareas() {
     let accion = 'asignar';
     let camposMarcados = usarPlantilla ? [] : camposSeleccionados;
     
+    // 🆕 ALERTA ESPECIAL: Si hay artículos APROBADOS y se van a asignar nuevos campos
+    if (articulosAprobados.length > 0 && accion === 'asignar') {
+        const nombresCampos = usarPlantilla 
+            ? `la plantilla "${document.querySelector('input[name="plantilla"]:checked').closest('label').querySelector('h4').textContent}"`
+            : `${camposMarcados.length} campo(s) nuevo(s)`;
+        
+        const mensaje = `⚠️ ADVERTENCIA: Reasignación a artículos APROBADOS\n\n` +
+                       `Has seleccionado ${articulosAprobados.length} artículo(s) que ya están APROBADOS.\n\n` +
+                       `Al asignar ${nombresCampos}:\n\n` +
+                       `✅ Los campos ya aprobados se mantendrán BLOQUEADOS (no editables)\n` +
+                       `🔄 El artículo volverá a estado PENDIENTE\n` +
+                       `📋 Los nuevos campos estarán disponibles para completar\n` +
+                       `👤 El colaborador recibirá una notificación de reactivación\n\n` +
+                       `¿Deseas continuar con la asignación?`;
+        
+        if (!confirm(mensaje)) {
+            return;
+        }
+    }
+    
     // Si hay campos ya asignados en la selección, preguntar acción
     if (!usarPlantilla && camposAsignadosActuales.length > 0) {
         const camposYaAsignados = camposAsignadosActuales.filter(c => camposMarcados.includes(c.id.toString()));
         if (camposYaAsignados.length > 0) {
-            const mensaje = `⚠️ ATENCIÓN: Has seleccionado ${camposYaAsignados.length} campo(s) que ya están asignados a algunos artículos.\n\n` +
-                           `Campos:\n${camposYaAsignados.map(c => `• ${c.nombre} (en ${c.cantidad_articulos}/${c.total_articulos} artículos)`).join('\n')}\n\n` +
+            const mensaje = `⚠️ ATENCIÓN: Campos ya asignados detectados\n\n` +
+                           `Has seleccionado ${camposYaAsignados.length} campo(s) que ya están asignados:\n\n` +
+                           `${camposYaAsignados.map(c => `• ${c.nombre} (en ${c.cantidad_articulos}/${c.total_articulos} artículos)`).join('\n')}\n\n` +
                            `¿Qué deseas hacer?\n\n` +
-                           `✅ ACEPTAR = DESASIGNAR estos campos de los artículos seleccionados\n` +
+                           `✅ ACEPTAR = DESASIGNAR estos campos (los campos aprobados NO se eliminarán)\n` +
                            `❌ CANCELAR = Volver y cambiar la selección`;
             
             if (!confirm(mensaje)) {
@@ -578,7 +676,7 @@ function asignarTareas() {
     
     // Preparar datos
     const data = {
-        articulos_ids: articulosSeleccionados,
+        articulos_ids: articulosSeleccionados.map(a => a.id),
         usar_plantilla: usarPlantilla,
         plantilla_id: plantillaSeleccionada ? plantillaSeleccionada.value : null,
         campos_ids: camposSeleccionados,
@@ -608,7 +706,18 @@ function asignarTareas() {
         console.log('✅ Datos procesados:', data);
         
         if (data.success) {
-            mostrarNotificacion(data.mensaje, 'success');
+            // 🆕 Mensaje mejorado con detalles de reactivación
+            let mensajeFinal = data.mensaje;
+            
+            if (data.articulos_reactivados && data.articulos_reactivados > 0) {
+                mensajeFinal += `\n\n🔄 ${data.articulos_reactivados} artículo(s) aprobado(s) fueron reactivados a estado PENDIENTE.`;
+            }
+            
+            if (data.campos_protegidos && data.campos_protegidos > 0) {
+                mensajeFinal += `\n\n🔒 ${data.campos_protegidos} campo(s) ya aprobado(s) permanecen protegidos.`;
+            }
+            
+            mostrarNotificacion(mensajeFinal, 'success');
             
             // Recargar artículos después de 1.5 segundos
             setTimeout(() => {
@@ -635,7 +744,6 @@ function asignarTareas() {
         restaurarBotonAsignar();
     });
 }
-
 function restaurarBotonAsignar() {
     const btnAsignar = document.getElementById('btn-asignar');
     if (btnAsignar) {
