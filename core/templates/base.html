@@ -1087,7 +1087,7 @@
                 if (this.loader) {
                     setTimeout(() => {
                         this.loader.classList.add('hidden');
-                    }, 500);
+                    }, 300);
                 }
             },
             
@@ -1097,15 +1097,36 @@
             }
         };
 
-        // Inicializar el loader cuando el DOM esté listo
+        // Inicializar el loader al cargar el DOM
         document.addEventListener('DOMContentLoaded', function() {
             PageLoader.init();
-            
-            // Ocultar el loader cuando la página termine de cargar
+
+            // Ocultar el loader al terminar de cargar la página
             window.addEventListener('load', function() {
                 PageLoader.hide();
             });
+
+            // Ocultar también si se usa la caché del navegador (volver atrás)
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    PageLoader.hide();
+                }
+            });
         });
+
+        // Mostrar el loader solo cuando el usuario hace clic en un enlace o envía un formulario
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.getAttribute('target') !== '_blank' && link.href && !link.href.startsWith('#')) {
+                PageLoader.show('Cargando...', 'Un momento por favor');
+            }
+        });
+
+        // También mostrarlo al enviar formularios
+        document.addEventListener('submit', function() {
+            PageLoader.show('Cargando...', 'Un momento por favor');
+        });
+
 
         // Mostrar el loader antes de navegar a otra página
         window.addEventListener('beforeunload', function() {

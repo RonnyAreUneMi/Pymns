@@ -27,6 +27,10 @@ urlpatterns = [
     path('proyecto/<int:proyecto_id>/asignar-campos/', 
          views.asignar_campos_articulos, 
          name='asignar_campos_articulos'),
+
+     path('proyecto/<int:proyecto_id>/articulo/<int:articulo_id>/campo/<int:campo_id>/eliminar/', 
+     views.eliminar_campo_individual, 
+     name='eliminar_campo_individual'),
     
     # ==================== PLANTILLAS ====================
     path('proyecto/<int:proyecto_id>/plantillas/', 

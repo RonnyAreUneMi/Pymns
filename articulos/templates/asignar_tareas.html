@@ -35,12 +35,21 @@
                     </h1>
                     <p class="text-gray-600 dark:text-gray-400">Gestiona qué campos de búsqueda asignar a cada colaborador</p>
                 </div>
-                <a href="{% url 'detalle_proyecto' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    <span>Volver</span>
-                </a>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'articulos:ver_articulos' proyecto.id %}" class="text-sm px-4 py-2.5 bg-primary bg-opacity-10 dark:bg-primary-neon dark:bg-opacity-20 text-primary dark:text-primary-neon rounded-lg hover:bg-opacity-20 transition-all flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                        </svg>
+                        <span>Seleccionar artículos</span>
+                    </a>
+                    <!-- Botón "Volver" -->
+                    <a href="{% url 'detalle_proyecto' proyecto.id %}" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        <span>Volver</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -211,38 +220,56 @@
 
                     <!-- Contenido Campos Individuales -->
                     <div id="contenido-campos" class="p-6 hidden tab-content">
-                        {% if campos_disponibles %}
-                            <div class="space-y-4">
-                                {% regroup campos_disponibles by get_categoria_display as categorias %}
-                                {% for categoria in categorias %}
-                                    <div>
-                                        <h4 class="font-bold text-gray-900 dark:text-white mb-3 flex items-center">
-                                            <span class="w-2 h-2 rounded-full bg-primary dark:bg-primary-neon mr-2"></span>
-                                            {{ categoria.grouper }}
-                                        </h4>
-                                        <div class="space-y-2 ml-4">
-                                            {% for campo in categoria.list %}
-                                            <label class="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer campo-label">
-                                                <input type="checkbox" name="campos" value="{{ campo.id }}" class="mt-1 w-4 h-4 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded campo-checkbox" onchange="actualizarCamposAsignados()">
-                                                <div class="ml-3 flex-1">
-                                                    <h5 class="font-medium text-gray-900 dark:text-white">{{ campo.nombre }}</h5>
-                                                    {% if campo.descripcion %}
-                                                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ campo.descripcion }}</p>
-                                                    {% endif %}
-                                                    <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded mt-1 inline-block">{{ campo.get_tipo_dato_display }}</span>
-                                                </div>
-                                            </label>
-                                            {% endfor %}
-                                        </div>
+                        <div class="max-h-96 overflow-y-auto pr-2">
+                            {% if campos_disponibles %}
+                                <!-- 🔍 Buscador de Campos -->
+                                <div class="mb-4">
+                                    <div class="relative">
+                                        <input 
+                                            type="text" 
+                                            id="buscador-campos" 
+                                            placeholder="Buscar campos por nombre..." 
+                                            class="w-full px-4 py-2 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-neon focus:border-transparent"
+                                            oninput="filtrarCampos()"
+                                        >
+                                        <svg class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
                                     </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                                <p>No hay campos disponibles</p>
-                                <a href="{% url 'articulos:gestionar_campos' proyecto.id %}" class="text-sm text-primary dark:text-primary-neon hover:underline mt-2 inline-block">Crear campos</a>
-                            </div>
-                        {% endif %}
+                                </div>
+
+                                <div class="space-y-4">
+                                    {% regroup campos_disponibles by get_categoria_display as categorias %}
+                                    {% for categoria in categorias %}
+                                        <div class="categoria-campos" data-categoria="{{ categoria.grouper }}">
+                                            <h4 class="font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                                                <span class="w-2 h-2 rounded-full bg-primary dark:bg-primary-neon mr-2"></span>
+                                                {{ categoria.grouper }}
+                                            </h4>
+                                            <div class="space-y-2 ml-4">
+                                                {% for campo in categoria.list %}
+                                                <label class="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer campo-label" data-nombre="{{ campo.nombre|lower }}">
+                                                    <input type="checkbox" name="campos" value="{{ campo.id }}" class="mt-1 w-4 h-4 text-primary dark:text-primary-neon focus:ring-primary dark:focus:ring-primary-neon rounded campo-checkbox" onchange="actualizarCamposAsignados()">
+                                                    <div class="ml-3 flex-1">
+                                                        <h5 class="font-medium text-gray-900 dark:text-white">{{ campo.nombre }}</h5>
+                                                        {% if campo.descripcion %}
+                                                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ campo.descripcion }}</p>
+                                                        {% endif %}
+                                                        <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded mt-1 inline-block">{{ campo.get_tipo_dato_display }}</span>
+                                                    </div>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                                    <p>No hay campos disponibles</p>
+                                    <a href="{% url 'articulos:gestionar_campos' proyecto.id %}" class="text-sm text-primary dark:text-primary-neon hover:underline mt-2 inline-block">Crear campos</a>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -262,12 +289,15 @@
         </div>
     </div>
 </div>
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 const csrftoken = getCookie('csrftoken');
 let usuarioSeleccionadoId = null;
 let articulosData = [];
 let camposAsignadosActuales = [];
+const urlEliminarBase = "{% url 'articulos:eliminar_campo_individual' proyecto.id 0 0 %}";
 
 function getCookie(name) {
     let cookieValue = null;
@@ -424,13 +454,22 @@ function mostrarArticulos(articulos) {
                             campo.completado 
                                 ? 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300' 
                                 : 'bg-blue-100 dark:bg-blue-900 dark:bg-opacity-30 text-blue-800 dark:text-blue-300'
-                        } rounded-full flex items-center">
+                        } rounded-full flex items-center relative">
                             ${campo.completado ? `
                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                 </svg>
                             ` : ''}
                             ${campo.nombre}
+                            <!-- Botón de eliminación individual - ACTUALIZADO -->
+                            ${!campo.completado ? `
+                                <button 
+                                    onclick="eliminarCampoIndividual('${art.id}', '${campo.id}', this); event.stopPropagation();"
+                                    class="ml-1 w-4 h-4 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 font-bold text-xs flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors"
+                                    title="Eliminar campo">
+                                    ×
+                                </button>
+                            ` : ''}
                         </span>
                     `).join('')}
                 </div>
@@ -797,6 +836,175 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Script de asignación de tareas cargado');
     mostrarTab('plantillas');
 });
+
+function filtrarCampos() {
+    const query = document.getElementById('buscador-campos').value.toLowerCase().trim();
+    const contenedorCampos = document.getElementById('contenido-campos');
+    const labels = contenedorCampos.querySelectorAll('.campo-label');
+    const categorias = contenedorCampos.querySelectorAll('.categoria-campos');
+
+    // Filtrar cada campo
+    labels.forEach(label => {
+        const nombre = label.getAttribute('data-nombre') || '';
+        if (nombre.includes(query)) {
+            label.style.display = '';
+        } else {
+            label.style.display = 'none';
+        }
+    });
+
+    // Ocultar/mostrar categorías completas si no tienen campos visibles
+    categorias.forEach(categoria => {
+        const camposVisibles = categoria.querySelectorAll('.campo-label:not([style*="display: none"])');
+        if (camposVisibles.length === 0) {
+            categoria.style.display = 'none';
+        } else {
+            categoria.style.display = '';
+        }
+    });
+}
+
+function mostrarConfirmacion(mensaje, callbackSi, callbackNo = () => {}) {
+    // Eliminar confirmación anterior si existe
+    const existente = document.getElementById('modal-confirmacion');
+    if (existente) existente.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'modal-confirmacion';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm p-4';
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full transform transition-all duration-200 scale-95">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4 flex-1">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">¿Eliminar campo?</h3>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">${mensaje}</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="document.getElementById('modal-confirmacion').remove(); ${callbackNo ? callbackNo.toString().replace('()', '') + '()' : ''}" 
+                        class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    Cancelar
+                </button>
+                <button onclick="document.getElementById('modal-confirmacion').remove(); ${callbackSi.toString().replace('()', '')}()" 
+                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function eliminarCampoIndividual(articuloId, campoId, buttonElement) {
+    // Prevenir propagación del evento para evitar seleccionar el checkbox
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // ✅ Obtener el <span> correcto usando el botón mismo
+    const campoSpan = buttonElement.closest('span');
+    const nombreCampo = campoSpan.textContent.replace('×', '').trim();
+
+    Swal.fire({
+        title: '¿Eliminar campo asignado?',
+        html: `¿Estás seguro de eliminar el campo "<strong>${nombreCampo}</strong>" de este artículo?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl',
+            title: 'text-gray-900 dark:text-white font-bold',
+            content: 'text-gray-600 dark:text-gray-400',
+            confirmButton: 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200',
+            cancelButton: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-200'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const csrftoken = getCookie('csrftoken');
+            
+            // ✅ USAR LA URL CORRECTA para eliminar campo individual
+            fetch(`/articulos/proyecto/{{ proyecto.id }}/articulo/${articuloId}/campo/${campoId}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // ✅ Mostrar notificación de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Campo eliminado!',
+                        text: data.message || 'Campo eliminado correctamente',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl'
+                        }
+                    });
+                    
+                    // ✅ Animar y eliminar SOLO el <span> del campo específico
+                    campoSpan.style.transition = 'all 0.3s ease';
+                    campoSpan.style.opacity = '0';
+                    campoSpan.style.transform = 'translateX(-10px)';
+                    
+                    setTimeout(() => {
+                        campoSpan.remove();
+                        
+                        // ✅ Verificar si quedan campos en el artículo
+                        const contenedorCampos = buttonElement.closest('.mt-2');
+                        if (contenedorCampos) {
+                            const camposRestantes = contenedorCampos.querySelectorAll('span.px-2').length - 1; // -1 porque acabamos de ocultar uno
+                            
+                            if (camposRestantes === 0) {
+                                // Si no quedan campos, recargar la lista de artículos
+                                if (usuarioSeleccionadoId) {
+                                    cargarArticulos(usuarioSeleccionadoId);
+                                }
+                            }
+                        }
+                    }, 300);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'No se pudo eliminar el campo',
+                        customClass: {
+                            popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl'
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al eliminar campo:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor. Por favor, intenta nuevamente.',
+                    customClass: {
+                        popup: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl'
+                    }
+                });
+            });
+        }
+    });
+}
 </script>
 
 <style>

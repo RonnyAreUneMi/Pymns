@@ -247,14 +247,14 @@
                 <!-- Visor de Contenido -->
                 <div class="article-viewer custom-scrollbar p-8 bg-gray-50 dark:bg-gray-900">
                     <div id="articleContent" class="article-content prose dark:prose-invert max-w-none">
-                        {% if articulo.abstract %}
+                        {% if articulo.metadata_completos and articulo.metadata_completos.abstract %}
                         <div class="mb-8 p-6 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg border-l-4 border-blue-500">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Abstract</h3>
-                            <p class="text-gray-700 dark:text-gray-300 text-justify">{{ articulo.abstract }}</p>
+                            <p class="text-gray-700 dark:text-gray-300 text-justify">{{ articulo.metadata_completos.abstract }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if articulo.contenido_extraido %}
+                        {% comment %} {% if articulo.contenido_extraido %}
                         <div class="space-y-4">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Contenido Extraído</h3>
                             {{ articulo.contenido_extraido|safe }}
@@ -267,7 +267,7 @@
                             <p class="text-lg mb-2">Contenido no disponible para visualización</p>
                             <p class="text-sm">Descarga el PDF para ver el artículo completo</p>
                         </div>
-                        {% endif %}
+                        {% endif %} {% endcomment %}
                     </div>
                 </div>
             </div>

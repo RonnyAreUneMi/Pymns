@@ -2179,6 +2179,91 @@ def asignar_campos_articulos(request, proyecto_id):
         else:
             messages.error(request, f'Error al procesar la asignación: {str(e)}')
             return redirect('articulos:ver_articulos', proyecto_id=proyecto_id)
+        
+@login_required
+def eliminar_campo_individual(request, proyecto_id, articulo_id, campo_id):
+    """
+    🎯 FUNCIÓN ESPECÍFICA: Elimina un campo asignado a un artículo.
+    No requiere que haya otros artículos seleccionados.
+    Solo necesita el ID del artículo y el ID del campo.
+    """
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    # Verificar acceso
+    usuario_proyecto = UsuarioProyecto.objects.filter(
+        usuario=request.user,
+        proyecto=proyecto,
+        rol_proyecto='DUEÑO'
+    ).first()
+    
+    if not usuario_proyecto:
+        return JsonResponse({'success': False, 'error': 'No tienes permisos para eliminar campos'}, status=403)
+    
+    # Obtener artículo y campo
+    articulo = get_object_or_404(Articulo, id=articulo_id, proyecto=proyecto)
+    campo = get_object_or_404(CampoMetanalisis, id=campo_id)
+    
+    # Buscar la asignación - SOLO si NO está aprobada
+    asignacion = AsignacionCampo.objects.filter(
+        articulo=articulo,
+        campo=campo,
+        aprobado=False  # ✅ Solo eliminar si NO está aprobado
+    ).first()
+    
+    if not asignacion:
+        return JsonResponse({
+            'success': False,
+            'error': 'El campo no existe, ya fue eliminado o está aprobado y no puede ser modificado.'
+        }, status=400)
+    
+    # Guardar nombre para mensaje
+    nombre_campo = campo.nombre
+    
+    # Eliminar la asignación
+    asignacion.delete()
+    
+    # Verificar si quedan campos en el artículo
+    campos_restantes = articulo.campos_asignados.count()
+    
+    # Si no quedan campos, volver a EN_ESPERA
+    articulo_actualizado = False
+    if campos_restantes == 0:
+        articulo.cambiar_estado('EN_ESPERA', usuario=request.user)
+        articulo_actualizado = True
+    
+    # Registrar en historial
+    HistorialArticulo.objects.create(
+        articulo=articulo,
+        usuario=request.user,
+        tipo_cambio='DESASIGNACION_CAMPO_INDIVIDUAL',
+        valor_nuevo=f'Campo "{nombre_campo}" eliminado individualmente'
+    )
+    
+    # Notificar al usuario responsable (opcional)
+    usuario_responsable = articulo.usuario_asignado or articulo.usuario_carga
+    if usuario_responsable and usuario_responsable.id != request.user.id:
+        crear_notificacion_articulos(
+            usuario=usuario_responsable,
+            tipo='general',
+            titulo=f'🔄 Campo eliminado - {proyecto.nombre}',
+            mensaje=f'El campo "{nombre_campo}" fue eliminado de tu artículo "{articulo.titulo[:50]}..."',
+            url=reverse('articulos:workspace_articulo', args=[articulo.id]),
+            proyecto=proyecto
+        )
+    
+    print(f"✅ Campo '{nombre_campo}' eliminado del artículo '{articulo.titulo[:30]}'. Campos restantes: {campos_restantes}")
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Campo "{nombre_campo}" eliminado correctamente.',
+        'articulo_actualizado': articulo_actualizado,
+        'campos_restantes': campos_restantes,
+        'nuevo_estado': articulo.get_estado_display() if articulo_actualizado else None
+    })
 
 @login_required
 def estadisticas_articulo(request, articulo_id):
