@@ -278,9 +278,9 @@ def detalle_proyecto(request, proyecto_id):
                     'opciones': [
                         {
                             'nombre': 'Bandeja de Revisión',
-                            'url': '#',
+                            'url': reverse('articulos:bandeja_revision', args=[proyecto.id]),
                             'icono': 'inbox',
-                            'activo': False
+                            'activo': True
                         }
                     ]
                 },
@@ -373,9 +373,9 @@ def detalle_proyecto(request, proyecto_id):
                     'opciones': [
                         {
                             'nombre': 'Bandeja de Revisión',
-                            'url': '#',
+                            'url': reverse('articulos:bandeja_revision', args=[proyecto.id]),
                             'icono': 'inbox',
-                            'activo': False
+                            'activo': True
                         }
                     ]
                 },
